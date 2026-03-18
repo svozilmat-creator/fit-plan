@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FitPlán</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g:#16613a;--g2:#e0f2ea;--g3:#0a3d22;--gm:#1e7d4a;
+  --am:#b85c1a;--aml:#fef3e8;
+  --pu:#4930a8;--pul:#edeafb;
+  --tl:#126060;--tll:#daf4f4;
+  --re:#b01e1e;--rel:#fce8e8;
+  --bg:#f2f1ed;
+  --sf:#ffffff;
+  --card:#ffffff;
+  --bd:#e0dcd4;--bd2:#c8c2b8;--bd3:#b0a898;
+  --tx:#141210;--mt:#68625a;--mt2:#9c968e;
+  --r:14px;--rr:100px;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
+  --shh:0 2px 6px rgba(0,0,0,.08),0 8px 32px rgba(0,0,0,.10);
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{font-size:16px;scroll-behavior:smooth;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:stretch;
+  box-shadow:0 1px 0 var(--bd),0 4px 20px rgba(0,0,0,.04);
+  height:60px;
+}
+.logo-wrap{
+  display:flex;align-items:center;padding:0 1.5rem;gap:10px;
+  flex-shrink:0;border-right:1px solid var(--bd);
+}
+.logo-emoji{font-size:24px;line-height:1;}
+.logo-text{font-family:var(--font-display);font-size:21px;color:var(--g);font-weight:700;letter-spacing:-.3px;line-height:1;}
+.logo-text em{font-style:italic;font-weight:300;color:var(--gm);}
+.nav{display:flex;flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 4px;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-btn{
+  flex-shrink:0;padding:0 20px;border:none;background:none;
+  font-family:var(--font-body);font-size:14px;font-weight:500;
+  color:var(--mt);cursor:pointer;position:relative;
+  transition:color .2s;white-space:nowrap;letter-spacing:.01em;
+}
+.nav-btn::after{
+  content:'';position:absolute;bottom:0;left:14px;right:14px;
+  height:2px;background:var(--g);border-radius:2px 2px 0 0;
+  transform:scaleX(0);transition:transform .22s cubic-bezier(.4,0,.2,1);
+}
+.nav-btn.active{color:var(--g);font-weight:700;}
+.nav-btn.active::after{transform:scaleX(1);}
+.nav-btn.disabled{opacity:.35;cursor:not-allowed;}
+.nav-btn:not(.disabled):hover{color:var(--tx);}
+
+/* ── LAYOUT ── */
+.main{max-width:1000px;margin:0 auto;padding:2rem 1.5rem 6rem;}
+.page{display:none;}
+.page.active{display:block;animation:pgIn .22s ease;}
+@keyframes pgIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+.pg-head{margin-bottom:2rem;}
+.pg-title{font-family:var(--font-display);font-size:32px;color:var(--tx);line-height:1.1;font-weight:700;letter-spacing:-.5px;}
+.pg-sub{color:var(--mt);font-size:14px;margin-top:6px;line-height:1.5;}
+
+/* ── PILLS / FILTERS ── */
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem;}
+.pill{
+  padding:7px 18px;border-radius:var(--rr);font-size:13px;font-weight:500;
+  border:1.5px solid var(--bd);cursor:pointer;background:var(--sf);color:var(--mt);
+  font-family:var(--font-body);transition:all .15s;letter-spacing:.01em;
+}
+.pill.on{background:var(--g);color:#fff;border-color:var(--g);box-shadow:0 2px 8px rgba(22,97,58,.25);}
+.pill:not(.on):hover{border-color:var(--g);color:var(--g);}
+.pill:active{transform:scale(.97);}
+
+/* ── TAGS ── */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--rr);font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;}
+.tag-sn{background:var(--aml);color:var(--am);}
+.tag-po{background:var(--pul);color:var(--pu);}
+.tag-fi{background:var(--tll);color:var(--tl);}
+.tag-re{background:var(--rel);color:var(--re);}
+
+/* ── MEAL CARDS ── */
+.meal-list{display:flex;flex-direction:column;gap:8px;}
+.meal-card{
+  background:var(--card);border:1px solid var(--bd);border-radius:var(--r);
+  overflow:hidden;transition:box-shadow .2s,border-color .2s;
+}
+.meal-card:hover{box-shadow:var(--sh);border-color:var(--bd2);}
+.meal-header{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:13px 18px;border:none;background:none;
+  text-align:left;cursor:pointer;font-family:var(--font-body);
+}
+.meal-header:active{background:var(--bg);}
+.meal-name{flex:1;font-size:14px;font-weight:600;color:var(--tx);line-height:1.35;}
+.prot-badge{
+  font-size:11px;font-weight:700;color:var(--g);
+  background:var(--g2);padding:3px 10px;border-radius:var(--rr);flex-shrink:0;
+}
+.meal-time-txt{font-size:12px;color:var(--mt2);flex-shrink:0;}
+.meal-chev{font-size:14px;color:var(--mt2);transition:transform .2s;flex-shrink:0;margin-left:4px;opacity:.6;}
+.meal-chev.open{transform:rotate(180deg);}
+.meal-body{display:none;padding:0 18px 18px;border-top:1px solid var(--bg);}
+.meal-body.open{display:block;}
+.meal-body-title{
+  font-size:11px;font-weight:700;color:var(--g);
+  text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px;
+}
+.ing-list{font-size:13.5px;line-height:2;color:var(--tx);white-space:pre-line;}
+.pantry-txt{font-size:12px;color:var(--mt);margin-top:6px;font-style:italic;}
+.steps-list{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+.step-item{display:flex;gap:14px;align-items:flex-start;}
+.step-num{
+  flex-shrink:0;width:26px;height:26px;border-radius:50%;
+  background:var(--g);color:#fff;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;margin-top:2px;
+}
+.step-text{font-size:14px;line-height:1.65;color:var(--tx);}
+.db-stats{
+  display:flex;gap:0;margin-top:2rem;padding-top:1.5rem;
+  border-top:1px solid var(--bd);flex-wrap:wrap;
+}
+.stat-item{
+  font-size:13px;color:var(--mt);padding:6px 20px 6px 0;
+  border-right:1px solid var(--bd);margin-right:20px;
+  display:flex;align-items:center;gap:6px;
+}
+.stat-item:last-child{border-right:none;}
+.stat-item strong{color:var(--tx);font-weight:700;}
+.custom-badge{
+  font-size:10px;font-weight:700;background:var(--am);color:#fff;
+  padding:2px 8px;border-radius:var(--rr);margin-left:6px;
+}
+
+/* ── ADD FORM ── */
+.add-btn-row{display:flex;justify-content:flex-end;margin-bottom:1.5rem;}
+.btn-add-meal{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 22px;background:var(--g);color:#fff;border:none;
+  border-radius:var(--r);font-family:var(--font-body);
+  font-size:14px;font-weight:600;cursor:pointer;
+  box-shadow:0 2px 12px rgba(22,97,58,.28);transition:all .18s;
+}
+.btn-add-meal:hover{background:var(--g3);transform:translateY(-1px);box-shadow:0 4px 16px rgba(22,97,58,.32);}
+.add-form-wrap{
+  background:var(--sf);border:2px solid var(--g);border-radius:var(--r);
+  padding:24px;margin-bottom:1.5rem;
+  box-shadow:0 4px 24px rgba(22,97,58,.12);display:none;
+}
+.add-form-wrap.open{display:block;}
+.af-title{
+  font-family:var(--font-display);font-size:22px;color:var(--tx);
+  margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;
+}
+.af-close{background:none;border:none;font-size:22px;color:var(--mt);cursor:pointer;padding:4px;line-height:1;border-radius:8px;transition:all .15s;}
+.af-close:hover{background:var(--bg);color:var(--tx);}
+.af-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.af-field{display:flex;flex-direction:column;gap:6px;}
+.af-field.full{grid-column:1/-1;}
+.af-label{font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.07em;}
+.af-inp,.af-sel,.af-ta{
+  padding:11px 14px;border:1.5px solid var(--bd);border-radius:10px;
+  font-family:var(--font-body);font-size:14px;background:var(--bg);
+  color:var(--tx);outline:none;transition:border-color .15s,background .15s;
+  -webkit-appearance:none;
+}
+.af-inp:focus,.af-sel:focus,.af-ta:focus{border-color:var(--g);background:var(--sf);}
+.af-ta{resize:vertical;min-height:80px;line-height:1.6;}
+.af-sel{cursor:pointer;}
+.af-sec{
+  font-size:11px;font-weight:700;color:var(--g);text-transform:uppercase;
+  letter-spacing:.08em;margin:20px 0 10px;display:flex;align-items:center;gap:8px;
+}
+.af-ing-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.af-ing-row{display:grid;grid-template-columns:1fr 80px 70px 36px;gap:8px;align-items:center;}
+.af-del{
+  width:36px;height:36px;border-radius:9px;border:1.5px solid var(--bd);
+  background:var(--bg);color:var(--mt);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.af-del:hover{border-color:var(--re);color:var(--re);background:var(--rel);}
+.btn-af-add{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border:1.5px dashed var(--g);border-radius:10px;
+  background:none;color:var(--g);font-family:var(--font-body);
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.btn-af-add:hover{background:var(--g2);}
+.af-steps-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.af-step-row{display:grid;grid-template-columns:26px 1fr 36px;gap:10px;align-items:flex-start;}
+.af-step-num-el{
+  width:26px;height:26px;border-radius:50%;background:var(--g);
+  color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:5px;
+}
+.af-step-ta{
+  padding:10px 13px;border:1.5px solid var(--bd);border-radius:10px;
+  font-family:var(--font-body);font-size:13.5px;background:var(--bg);
+  color:var(--tx);outline:none;resize:none;line-height:1.55;
+  min-height:44px;transition:border-color .15s;width:100%;
+}
+.af-step-ta:focus{border-color:var(--g);}
+.af-footer{
+  display:flex;gap:10px;justify-content:flex-end;
+  margin-top:20px;padding-top:18px;border-top:1px solid var(--bd);
+}
+.btn-af-cancel{
+  padding:10px 22px;border:1.5px solid var(--bd);border-radius:10px;
+  background:var(--bg);color:var(--mt);font-family:var(--font-body);
+  font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.btn-af-cancel:hover{border-color:var(--bd2);color:var(--tx);}
+.btn-af-save{
+  padding:10px 26px;background:var(--g);color:#fff;border:none;
+  border-radius:10px;font-family:var(--font-body);font-size:14px;
+  font-weight:700;cursor:pointer;transition:all .15s;
+  box-shadow:0 2px 10px rgba(22,97,58,.25);
+}
+.btn-af-save:hover{background:var(--g3);}
+
+/* ── GENERATE PAGE ── */
+.gen-hero{text-align:center;max-width:560px;margin:0 auto;padding:2rem 0 3rem;}
+.gen-icon{font-size:72px;margin-bottom:1.5rem;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,.12));}
+.gen-title{font-family:var(--font-display);font-size:38px;color:var(--tx);margin-bottom:.75rem;font-weight:700;letter-spacing:-.5px;line-height:1.1;}
+.gen-desc{color:var(--mt);font-size:15px;line-height:1.75;margin-bottom:2.5rem;}
+.gen-desc strong{color:var(--tx);}
+.feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:2rem;}
+.feat-card{
+  background:var(--card);border:1px solid var(--bd);border-radius:var(--r);
+  padding:20px 14px;text-align:center;transition:all .2s;
+}
+.feat-card:hover{box-shadow:var(--sh);border-color:var(--bd2);transform:translateY(-2px);}
+.feat-ico{font-size:30px;margin-bottom:10px;line-height:1;}
+.feat-t{font-size:13px;font-weight:700;color:var(--tx);letter-spacing:-.1px;}
+.feat-s{font-size:12px;color:var(--mt);margin-top:5px;line-height:1.45;}
+.gen-toggle{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2.5rem;}
+.gen-toggle label{font-size:14px;color:var(--mt);display:flex;align-items:center;gap:9px;cursor:pointer;}
+.gen-toggle input[type=checkbox]{width:18px;height:18px;accent-color:var(--g);cursor:pointer;}
+.btn-gen{
+  padding:17px 56px;background:var(--g);color:#fff;border:none;
+  border-radius:var(--r);font-family:var(--font-body);
+  font-size:17px;font-weight:700;cursor:pointer;letter-spacing:.01em;
+  box-shadow:0 4px 24px rgba(22,97,58,.32);
+  transition:all .22s cubic-bezier(.4,0,.2,1);
+}
+.btn-gen:hover{background:var(--g3);transform:translateY(-2px);box-shadow:0 8px 32px rgba(22,97,58,.36);}
+.btn-gen:active{transform:translateY(0);}
+.gen-prev{margin-top:1.5rem;font-size:13px;color:var(--mt);}
+.gen-prev a{color:var(--g);font-weight:600;text-decoration:none;}
+.gen-prev a:hover{text-decoration:underline;}
+
+/* ── PLAN PAGE ── */
+.plan-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;
+}
+.btn-regen{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 22px;background:var(--sf);color:var(--g);
+  border:1.5px solid var(--g);border-radius:var(--r);
+  font-family:var(--font-body);font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.btn-regen:hover{background:var(--g2);}
+
+.plan-grid{display:flex;flex-direction:column;gap:10px;}
+.plan-row{
+  background:var(--card);border:1px solid var(--bd);
+  border-radius:var(--r);overflow:hidden;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+  transition:box-shadow .2s;
+}
+.plan-row:hover{box-shadow:var(--sh);}
+.plan-row-head{display:grid;grid-template-columns:86px 1fr 1fr 1fr;gap:0;}
+.plan-day-cell{
+  background:var(--g);color:#fff;
+  padding:12px 14px;font-size:13px;font-weight:700;
+  display:flex;align-items:center;letter-spacing:.01em;
+}
+.plan-meal-cell{
+  padding:11px 14px;position:relative;
+  border-left:1px solid rgba(0,0,0,.06);
+}
+.pmc-label{
+  font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;margin-bottom:5px;
+}
+.pmc-sn .pmc-label{color:var(--am);}
+.pmc-ob .pmc-label{color:var(--g);}
+.pmc-ve .pmc-label{color:var(--pu);}
+.pmc-sn{background:#fdf8f2;}
+.pmc-ob{background:#f3faf5;}
+.pmc-ve{background:#f6f3fc;}
+.pmc-text{font-size:12.5px;line-height:1.4;color:var(--tx);padding-right:26px;}
+.pmc-changed{border-top:2px solid var(--gm)!important;}
+
+.pantry-banner{
+  margin-top:12px;background:var(--g2);border:1px solid #a8d8bb;
+  border-radius:var(--r);padding:14px 18px;
+  font-size:13px;color:var(--g3);line-height:1.65;
+}
+
+/* ── SWAP BUTTON ── */
+.swap-btn{
+  position:absolute;top:8px;right:8px;
+  width:22px;height:22px;border-radius:50%;
+  border:1px solid var(--bd);background:var(--sf);
+  color:var(--g);font-size:12px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:all .15s;padding:0;line-height:1;
+}
+.plan-meal-cell:hover .swap-btn{opacity:1;}
+.swap-btn:hover{background:var(--g);color:#fff;border-color:var(--g);transform:scale(1.1);}
+@media(max-width:700px){.swap-btn{opacity:1;width:24px;height:24px;}}
+
+/* ── SWAP MODAL ── */
+.swap-overlay{
+  position:fixed;inset:0;background:rgba(20,18,16,.5);
+  z-index:500;display:flex;align-items:center;justify-content:center;
+  padding:16px;backdrop-filter:blur(4px);
+}
+.swap-modal{
+  background:var(--sf);border-radius:20px;
+  width:100%;max-width:540px;max-height:86vh;
+  display:flex;flex-direction:column;
+  box-shadow:0 24px 80px rgba(0,0,0,.28);
+  overflow:hidden;
+}
+.swap-head{
+  padding:18px 22px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;
+}
+.swap-title{font-family:var(--font-display);font-size:20px;color:var(--tx);font-weight:700;}
+.swap-sub{font-size:12px;color:var(--mt);margin-top:3px;line-height:1.4;}
+.swap-close{
+  background:none;border:none;font-size:20px;color:var(--mt);
+  cursor:pointer;padding:6px;line-height:1;border-radius:8px;
+  transition:all .15s;flex-shrink:0;
+}
+.swap-close:hover{background:var(--bg);color:var(--tx);}
+.swap-search-wrap{padding:14px 22px;border-bottom:1px solid var(--bd);flex-shrink:0;}
+.swap-search{
+  width:100%;padding:10px 16px;
+  border:1.5px solid var(--bd);border-radius:10px;
+  font-family:var(--font-body);font-size:14px;
+  background:var(--bg);color:var(--tx);outline:none;
+  transition:border-color .15s;
+}
+.swap-search:focus{border-color:var(--g);background:var(--sf);}
+.swap-pills{
+  display:flex;gap:6px;flex-wrap:wrap;
+  padding:12px 22px;border-bottom:1px solid var(--bd);flex-shrink:0;
+}
+.swap-pill{
+  padding:5px 14px;border-radius:var(--rr);font-size:12px;font-weight:600;
+  border:1.5px solid var(--bd);cursor:pointer;background:var(--sf);
+  color:var(--mt);font-family:var(--font-body);transition:all .15s;
+}
+.swap-pill.on{background:var(--g);color:#fff;border-color:var(--g);}
+.swap-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;}
+.swap-item{
+  display:flex;align-items:center;gap:12px;padding:12px 22px;
+  cursor:pointer;transition:background .1s;
+  border-bottom:1px solid var(--bg);
+}
+.swap-item:last-child{border-bottom:none;}
+.swap-item:hover,.swap-item:active{background:var(--g2);}
+.swap-item.is-current{background:#fffcf5;}
+.swap-item-name{flex:1;font-size:14px;font-weight:500;color:var(--tx);line-height:1.35;}
+.swap-meta{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.swap-prot{font-size:11px;color:var(--g);font-weight:700;background:var(--g2);padding:3px 9px;border-radius:var(--rr);}
+.swap-time{font-size:11px;color:var(--mt2);}
+.swap-cur-badge{font-size:10px;font-weight:700;background:var(--am);color:#fff;padding:2px 7px;border-radius:var(--rr);margin-left:4px;}
+.swap-empty{padding:40px 22px;text-align:center;color:var(--mt);font-size:14px;}
+
+/* ── SHOP PAGE ── */
+.shop-sec-title{
+  font-family:var(--font-display);font-size:26px;color:var(--tx);
+  margin-bottom:14px;font-weight:700;letter-spacing:-.3px;
+}
+.shop-sec-title:not(:first-child){margin-top:3rem;}
+.copy-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;background:var(--sf);border:1.5px solid var(--bd);
+  border-radius:var(--rr);font-size:12px;font-weight:600;
+  color:var(--mt);cursor:pointer;transition:all .15s;
+  margin-left:12px;vertical-align:middle;font-family:var(--font-body);
+}
+.copy-btn:hover{border-color:var(--g);color:var(--g);}
+.copy-btn.copied{background:var(--g2);border-color:var(--g);color:var(--g);}
+.all-ings-box{
+  background:var(--sf);border:1.5px solid var(--bd);
+  border-radius:var(--r);padding:18px;margin-bottom:12px;
+}
+.all-ings-label{font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;}
+.all-ings-text{font-size:14px;line-height:2;color:var(--tx);white-space:pre-wrap;}
+.shop-grid{display:flex;flex-direction:column;gap:10px;}
+.shop-cat{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;}
+.shop-cat-head{
+  padding:13px 18px;background:var(--bg);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.shop-cat-name{font-size:13px;font-weight:700;color:var(--g);display:flex;align-items:center;gap:8px;}
+.shop-items{padding:4px 0;}
+.shop-item{
+  display:flex;align-items:center;gap:14px;padding:10px 18px;
+  cursor:pointer;transition:background .1s;
+  border-bottom:1px solid var(--bg);
+}
+.shop-item:last-child{border-bottom:none;}
+.shop-item:hover{background:var(--bg);}
+.shop-cb{
+  width:22px;height:22px;border-radius:7px;border:2px solid var(--bd2);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;background:var(--sf);
+}
+.shop-item.done .shop-cb{background:var(--g);border-color:var(--g);}
+.shop-item.done .shop-cb::after{content:'✓';color:#fff;font-size:12px;font-weight:700;}
+.shop-item-text{font-size:14px;color:var(--tx);}
+.shop-item.done .shop-item-text{text-decoration:line-through;color:var(--mt2);}
+
+/* ── RECIPE CARDS ── */
+.recipe-list{display:flex;flex-direction:column;gap:10px;}
+.recipe-card{
+  background:var(--card);border:1px solid var(--bd);
+  border-radius:var(--r);overflow:hidden;transition:box-shadow .2s;
+}
+.recipe-card:hover{box-shadow:var(--sh);}
+.recipe-hdr{
+  width:100%;padding:15px 20px;border:none;background:none;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;text-align:left;font-family:var(--font-body);gap:14px;
+}
+.recipe-hdr:hover{background:var(--bg);}
+.recipe-hdr-left{flex:1;min-width:0;}
+.recipe-name{font-size:15px;font-weight:700;color:var(--tx);letter-spacing:-.1px;}
+.recipe-meta{font-size:12px;color:var(--mt);display:flex;gap:12px;margin-top:5px;flex-wrap:wrap;align-items:center;}
+.recipe-prot{color:var(--g);font-weight:700;}
+.r-body{display:none;padding:0 20px 20px;border-top:1px solid var(--bd);}
+.r-body.open{display:block;}
+.r-body-title{font-size:11px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 9px;}
+.r-ing-list{font-size:13.5px;line-height:2;color:var(--tx);white-space:pre-line;}
+.r-pantry-txt{font-size:12px;color:var(--mt);margin-top:6px;font-style:italic;}
+.r-steps{display:flex;flex-direction:column;gap:11px;margin-top:6px;}
+.r-step{display:flex;gap:14px;align-items:flex-start;}
+.r-step-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--g);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.r-step-text{font-size:14px;line-height:1.65;color:var(--tx);padding-top:4px;}
+
+/* ── SETTINGS PAGE ── */
+.settings-card{
+  background:var(--card);border:1px solid var(--bd);
+  border-radius:var(--r);padding:24px;margin-bottom:14px;
+}
+.settings-sec-title{
+  font-family:var(--font-display);font-size:22px;color:var(--tx);
+  margin-bottom:12px;font-weight:700;
+}
+.settings-desc{font-size:14px;color:var(--mt);line-height:1.75;margin-bottom:20px;}
+.settings-desc strong{color:var(--tx);}
+.settings-steps{display:flex;flex-direction:column;gap:20px;}
+.stp{display:flex;gap:16px;align-items:flex-start;}
+.stp-num{
+  flex-shrink:0;width:30px;height:30px;border-radius:50%;
+  background:var(--g);color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.stp-body{flex:1;}
+.stp-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:6px;}
+.stp-desc{font-size:13.5px;color:var(--mt);line-height:1.7;margin-bottom:8px;}
+.stp-desc a{color:var(--g);font-weight:600;text-decoration:none;}
+.stp-desc a:hover{text-decoration:underline;}
+.stp-desc strong{color:var(--tx);}
+.s-inp-row{display:flex;gap:8px;margin-top:8px;}
+.s-inp{
+  flex:1;padding:11px 14px;border:1.5px solid var(--bd);border-radius:10px;
+  font-family:var(--font-body);font-size:14px;background:var(--bg);
+  color:var(--tx);outline:none;transition:border-color .15s;
+}
+.s-inp:focus{border-color:var(--g);}
+.s-vis{
+  flex-shrink:0;padding:0 14px;border:1.5px solid var(--bd);
+  border-radius:10px;background:var(--bg);cursor:pointer;font-size:16px;
+  transition:border-color .15s;
+}
+.s-vis:hover{border-color:var(--g);}
+.btn-sp{
+  padding:11px 24px;background:var(--g);color:#fff;border:none;
+  border-radius:10px;font-family:var(--font-body);font-size:14px;
+  font-weight:700;cursor:pointer;transition:all .15s;
+  margin-top:8px;display:inline-block;
+  box-shadow:0 2px 10px rgba(22,97,58,.25);
+}
+.btn-sp:hover{background:var(--g3);}
+.btn-ss{
+  padding:9px 20px;background:var(--sf);color:var(--g);
+  border:1.5px solid var(--g);border-radius:10px;
+  font-family:var(--font-body);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;margin-top:8px;
+  display:inline-block;margin-right:8px;
+}
+.btn-ss:hover{background:var(--g2);}
+.s-status{
+  margin-top:16px;padding:13px 18px;border-radius:10px;
+  font-size:13.5px;line-height:1.55;display:none;
+}
+.s-status.ok{background:#f0fdf5;border:1px solid #86efac;color:#14532d;}
+.s-status.err{background:var(--rel);border:1px solid #fca5a5;color:var(--re);}
+.s-status.info{background:var(--g2);border:1px solid #a8d8bb;color:var(--g3);}
+.sync-grid{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.sync-box{background:var(--bg);border-radius:12px;padding:14px 18px;min-width:120px;}
+.sync-lbl{font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.sync-val{font-size:14px;font-weight:600;color:var(--tx);}
+.sync-ok{color:var(--g);}
+.sync-err{color:var(--re);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(90px);
+  background:rgba(20,18,16,.92);
+  backdrop-filter:blur(12px);
+  color:#fff;padding:13px 24px;border-radius:var(--rr);
+  font-size:14px;font-weight:600;z-index:1000;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;white-space:nowrap;
+  box-shadow:0 4px 24px rgba(0,0,0,.25);
+  letter-spacing:.01em;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── SPINNER ── */
+.spin{
+  display:inline-block;width:15px;height:15px;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite;
+  vertical-align:middle;margin-right:8px;
+}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .topbar{height:54px;}
+  .logo-text{font-size:18px;}
+  .logo-wrap{padding:0 1rem;gap:8px;}
+  .nav-btn{padding:0 14px;font-size:13px;}
+  .main{padding:1.5rem 1rem 6rem;}
+  .pg-title{font-size:26px;}
+  .feat-grid{grid-template-columns:repeat(2,1fr);}
+  .gen-title{font-size:28px;}
+  .btn-gen{padding:15px 36px;font-size:15px;}
+  .plan-row-head{grid-template-columns:60px 1fr 1fr 1fr;}
+  .plan-day-cell{padding:10px;font-size:12px;}
+  .plan-meal-cell{padding:9px 10px;}
+  .pmc-text{font-size:11.5px;}
+  .af-grid{grid-template-columns:1fr 1fr;}
+  .af-ing-row{grid-template-columns:1fr 65px 55px 34px;}
+  .stat-item{padding:4px 14px 4px 0;margin-right:14px;font-size:12px;}
+}
+@media(max-width:480px){
+  .plan-row-head{display:flex;flex-direction:column;background:none;gap:0;}
+  .plan-day-cell{border-radius:0;padding:10px 16px;font-size:13px;}
+  .plan-meal-cell{border-bottom:1px solid var(--bd);border-left:none!important;padding:10px 16px;}
+  .plan-meal-cell:last-child{border-bottom:none;}
+  .feat-grid{grid-template-columns:repeat(2,1fr);}
+  .stat-item{border-right:none;padding-right:0;margin-right:12px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo-wrap">
+    <span class="logo-emoji">🥗</span>
+    <span class="logo-text">Fit<em>Plán</em></span>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="goTo('db')">Databáze</button>
+    <button class="nav-btn" onclick="goTo('gen')">Generovat</button>
+    <button class="nav-btn disabled" id="tab-plan" onclick="goTo('plan')">Jídelníček</button>
+    <button class="nav-btn disabled" id="tab-shop" onclick="goTo('shop')">Nákup & Recepty</button>
+    <button class="nav-btn" onclick="goTo('settings')">⚙️ Nastavení</button>
+  </nav>
+</div>
+
+<div class="main">
+
+  <!-- DATABÁZE -->
+  <div class="page active" id="page-db">
+    <div class="pg-head">
+      <div class="pg-title">Databáze receptů</div>
+      <div class="pg-sub" id="db-sub">Načítám…</div>
+    </div>
+    <div class="pill-row">
+      <button class="pill on" onclick="setFilter('all',this)">Vše</button>
+      <button class="pill" onclick="setFilter('sn',this)">🌅 Snídaně</button>
+      <button class="pill" onclick="setFilter('po',this)">🍗 Drůbež</button>
+      <button class="pill" onclick="setFilter('fi',this)">🐟 Ryby & mořské plody</button>
+      <button class="pill" onclick="setFilter('re',this)">🥩 Červené maso</button>
+    </div>
+    <div class="add-btn-row">
+      <button class="btn-add-meal" id="btn-open-form" onclick="openAddForm()">＋ Přidat vlastní jídlo</button>
+    </div>
+    <div class="add-form-wrap" id="add-form-wrap">
+      <div class="af-title">Přidat vlastní recept<button class="af-close" onclick="closeAddForm()">✕</button></div>
+      <div class="af-grid">
+        <div class="af-field full"><label class="af-label">Název jídla *</label><input class="af-inp" id="af-name" type="text" placeholder="např. Kuřecí prsa s brokolicí"></div>
+        <div class="af-field"><label class="af-label">Kategorie *</label>
+          <select class="af-sel" id="af-cat">
+            <option value="sn">🌅 Snídaně</option>
+            <option value="po" selected>🍗 Drůbež / Oběd</option>
+            <option value="fi">🐟 Ryby & mořské plody</option>
+            <option value="re">🥩 Červené maso</option>
+          </select>
+        </div>
+        <div class="af-field"><label class="af-label">Čas přípravy</label><input class="af-inp" id="af-time" type="text" placeholder="např. 30 min"></div>
+        <div class="af-field"><label class="af-label">Protein / porce</label><input class="af-inp" id="af-prot" type="text" placeholder="např. ~35 g"></div>
+      </div>
+      <div class="af-sec">🧂 Ingredience <span style="font-size:11px;font-weight:400;color:var(--mt);text-transform:none">(pro 2 osoby / 1 vaření)</span></div>
+      <div class="af-ing-list" id="af-ing-list"></div>
+      <button class="btn-af-add" onclick="addIngRow()">＋ Přidat ingredienci</button>
+      <div style="font-size:12px;color:var(--mt);margin-top:6px;font-style:italic">🏠 Koření a olej nemusíš přidávat – patří do postupu.</div>
+      <div class="af-sec" style="margin-top:16px">📋 Postup krok za krokem</div>
+      <div class="af-steps-list" id="af-steps-list"></div>
+      <button class="btn-af-add" onclick="addStepRow()">＋ Přidat krok</button>
+      <div class="af-footer">
+        <button class="btn-af-cancel" onclick="closeAddForm()">Zrušit</button>
+        <button class="btn-af-save" onclick="saveCustomMeal()">Uložit recept</button>
+      </div>
+    </div>
+    <div class="meal-list" id="meal-list"></div>
+    <div class="db-stats" id="db-stats"></div>
+  </div>
+
+  <!-- GENEROVAT -->
+  <div class="page" id="page-gen">
+    <div class="gen-hero">
+      <div class="gen-icon">🎲</div>
+      <h2 class="gen-title">Vygenerovat týdenní plán</h2>
+      <p class="gen-desc">Náhodný výběr z databáze <strong id="db-count">0</strong> receptů. Bez AI, bez internetu. Neděle vždy navazuje na pondělí příštího týdne.</p>
+      <div class="feat-grid">
+        <div class="feat-card"><div class="feat-ico">🍗</div><div class="feat-t">Drůbež & ryby</div><div class="feat-s">Kuřecí, krůtí, losos, krevety…</div></div>
+        <div class="feat-card"><div class="feat-ico">💪</div><div class="feat-t">Protein first</div><div class="feat-s">Min. 30–50 g / porce</div></div>
+        <div class="feat-card"><div class="feat-ico">🎒</div><div class="feat-t">Snídaně do práce</div><div class="feat-s">Box, sklenice nebo shaker</div></div>
+        <div class="feat-card"><div class="feat-ico">🍳</div><div class="feat-t">Max 3× vaření</div><div class="feat-s">Každé jídlo na 2–3 dny</div></div>
+      </div>
+      <div class="gen-toggle">
+        <label><input type="checkbox" id="include-red"> Zahrnout červené maso (max 1× za 14 dní)</label>
+      </div>
+      <button class="btn-gen" id="btn-gen" onclick="generate()">Vygenerovat jídelníček 🎲</button>
+      <div class="gen-prev" id="gen-prev" style="display:none">
+        Poslední plán k dispozici – <a href="#" onclick="goTo('plan');return false">zobrazit →</a>
+      </div>
+      <div id="no-cloud-banner" style="display:none;margin-top:1.5rem;background:#fffbf0;border:1.5px solid #f0c040;border-radius:12px;padding:16px 20px;max-width:480px;margin-left:auto;margin-right:auto;text-align:left">
+        <div style="font-size:15px;font-weight:700;color:#7a5000;margin-bottom:6px">☁️ Nastav sdílené ukládání</div>
+        <div style="font-size:13.5px;color:#7a5000;line-height:1.7">Aby data viděli všichni na webu, nastav cloud v záložce <strong>⚙️ Nastavení</strong>. Pak vlož API klíč a Bin ID do souboru HTML a nahraj znovu na Netlify.</div>
+        <button onclick="goTo('settings')" style="margin-top:10px;padding:8px 18px;background:#7a5000;color:#fff;border:none;border-radius:8px;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer">Přejít do Nastavení →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JÍDELNÍČEK -->
+  <div class="page" id="page-plan">
+    <div class="plan-toolbar">
+      <div>
+        <div class="pg-title">Jídelníček týdne</div>
+        <div style="color:var(--mt);font-size:13px;margin-top:4px" id="plan-info-txt">—</div>
+      </div>
+      <button class="btn-regen" onclick="generate()">🎲 Vygenerovat znovu</button>
+    </div>
+    <div class="plan-grid" id="plan-grid"></div>
+    <div class="pantry-banner" id="plan-pantry" style="display:none">
+      <strong>🏠 Předpokládáme doma (nekupovat):</strong><br><span id="pantry-text"></span>
+    </div>
+  </div>
+
+  <!-- NÁKUP & RECEPTY -->
+  <div class="page" id="page-shop">
+    <div class="pg-head">
+      <div class="pg-title">Nákup & Recepty</div>
+      <div class="pg-sub">Zaklikej co máš doma – zbytek koupit</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+      <span class="shop-sec-title" style="margin:0">🛒 Nákupní seznam</span>
+      <button class="copy-btn" id="copy-btn" onclick="copyAll()">📋 Kopírovat vše</button>
+    </div>
+    <div class="all-ings-box" id="all-ings-box" style="display:none">
+      <div class="all-ings-label">Čistý seznam (zkopíruj do nákupního listu):</div>
+      <div class="all-ings-text" id="all-ings-text"></div>
+    </div>
+    <div class="shop-grid" id="shop-grid"></div>
+    <div class="shop-sec-title" style="margin-top:2.5rem">👨‍🍳 Recepty</div>
+    <div class="recipe-list" id="recipe-list"></div>
+  </div>
+
+  <!-- NASTAVENÍ -->
+  <div class="page" id="page-settings">
+    <div class="pg-head">
+      <div class="pg-title">Nastavení cloudu</div>
+      <div class="pg-sub">Sdílené ukládání přes JSONBin.io – jídelníček synchronizuje pro všechny na webu</div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-sec-title">☁️ JSONBin.io synchronizace</div>
+      <p class="settings-desc">Bezplatné cloudové úložiště. Nastav jednou – vše se automaticky ukládá a sdílí pro všechny uživatele webu.<br><br>
+      <strong>Důležité:</strong> Po nastavení zkopíruj API klíč a Bin ID do souboru <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:12px">fitplan.html</code> – do konstant <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:12px">DEFAULT_CFG</code> na začátku skriptu. Pak znovu nahraj soubor na Netlify. Každý návštěvník pak uvidí sdílená data okamžitě bez zadávání údajů.</p>
+      <div class="settings-steps">
+        <div class="stp">
+          <div class="stp-num">1</div>
+          <div class="stp-body">
+            <div class="stp-title">Registrace</div>
+            <div class="stp-desc">Jdi na <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> a zaregistruj se zdarma.</div>
+          </div>
+        </div>
+        <div class="stp">
+          <div class="stp-num">2</div>
+          <div class="stp-body">
+            <div class="stp-title">API klíč</div>
+            <div class="stp-desc">Profil → <strong>API Keys</strong> → <strong>Create Access Key</strong> → zkopíruj:</div>
+            <div class="s-inp-row">
+              <input class="s-inp" type="password" id="cfg-key" placeholder="$2b$10$…">
+              <button class="s-vis" onclick="toggleVis('cfg-key',this)">👁</button>
+            </div>
+          </div>
+        </div>
+        <div class="stp">
+          <div class="stp-num">3</div>
+          <div class="stp-body">
+            <div class="stp-title">Vytvoř Bin nebo vlož ID</div>
+            <button class="btn-ss" id="btn-create-bin" onclick="createBin()">Vytvořit nový Bin ☁️</button>
+            <div style="margin-top:8px;font-size:13px;color:var(--mt)">nebo vlož existující Bin ID:</div>
+            <input class="s-inp" type="text" id="cfg-bin" placeholder="67a1b2c3d4e5f6…" style="margin-top:6px">
+          </div>
+        </div>
+        <div class="stp">
+          <div class="stp-num">4</div>
+          <div class="stp-body">
+            <div class="stp-title">Ulož a připoj</div>
+            <button class="btn-sp" onclick="saveSettings()">Uložit a připojit</button>
+          </div>
+        </div>
+      </div>
+      <div class="s-status" id="s-status"></div>
+    </div>
+    <div class="settings-card" id="default-cfg-banner" style="display:none;border-color:var(--g);background:var(--g2)">
+      <div class="settings-sec-title" style="color:var(--g3)">✅ Sdílená konfigurace aktivní</div>
+      <p style="font-size:14px;color:var(--g3);line-height:1.7">
+        V HTML souboru jsou vyplněny výchozí přihlašovací údaje (<code>DEFAULT_CFG</code>). Každý návštěvník webu automaticky vidí sdílená data bez nutnosti nastavení.
+      </p>
+    </div>
+    <div class="settings-card">
+      <div class="settings-sec-title">📊 Stav synchronizace</div>
+      <div class="sync-grid">
+        <div class="sync-box"><div class="sync-lbl">Stav</div><div class="sync-val" id="sync-status">—</div></div>
+        <div class="sync-box"><div class="sync-lbl">Poslední sync</div><div class="sync-val" id="sync-time">—</div></div>
+        <div class="sync-box"><div class="sync-lbl">Bin ID</div><div class="sync-val" id="sync-bin">—</div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="btn-ss" onclick="syncNow()">🔄 Sync nyní</button>
+        <button class="btn-ss" onclick="doPush()">⬆️ Nahrát</button>
+        <button class="btn-ss" onclick="doPull()">⬇️ Stáhnout</button>
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1.5px solid var(--bd)">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:8px">🔗 Sdílený odkaz</div>
+        <div style="font-size:13px;color:var(--mt);margin-bottom:10px;line-height:1.6">Zkopíruj tento odkaz a pošli komukoliv – kdo ho otevře, automaticky se připojí ke sdíleným datům.</div>
+        <button class="btn-sp" onclick="copyShareLink()" id="btn-share">📋 Zkopírovat sdílený odkaz</button>
+        <div id="share-link-box" style="display:none;margin-top:10px;background:var(--bg);border:1.5px solid var(--bd);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--mt);word-break:break-all;line-height:1.6" id="share-link-text"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+
+<!-- SWAP MODAL – outside script, before body end -->
+<div class="swap-overlay" id="swap-overlay" style="display:none" onclick="overlayClick(event)">
+  <div class="swap-modal">
+    <div class="swap-head">
+      <div>
+        <div class="swap-title" id="swap-title">Vyměnit jídlo</div>
+        <div class="swap-sub" id="swap-sub">Vyber náhradní recept</div>
+      </div>
+      <button class="swap-close" onclick="closeSwap()">✕</button>
+    </div>
+    <div class="swap-search-wrap">
+      <input class="swap-search" id="swap-search" type="text" placeholder="Hledat recept…" oninput="renderSwapList()" autocomplete="off">
+    </div>
+    <div class="swap-pills">
+      <button class="swap-pill on" onclick="setSwapFilter('all',this)">Vše</button>
+      <button class="swap-pill" onclick="setSwapFilter('sn',this)">🌅 Snídaně</button>
+      <button class="swap-pill" onclick="setSwapFilter('po',this)">🍗 Drůbež</button>
+      <button class="swap-pill" onclick="setSwapFilter('fi',this)">🐟 Ryby</button>
+      <button class="swap-pill" onclick="setSwapFilter('re',this)">🥩 Červené maso</button>
+    </div>
+    <div class="swap-list" id="swap-list" onclick="swapListClick(event)"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATABASE ────────────────────────────────────────────────────────────────
+const DB=[
+// ══ SNÍDANĚ (20 receptů) ══
+{id:'s01',name:'Overnight oats s proteinem a ovocem',cat:'sn',time:'5 min + noc',prot:'~32 g',
+ing:[{n:'ovesné vločky',q:80,u:'g',sc:'Přílohy'},{n:'řecký jogurt (10 %)',q:150,u:'g',sc:'Mléčné'},{n:'proteinový prášek (vanilka)',q:30,u:'g',sc:'Doplňky'},{n:'borůvky',q:100,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['med','skořice','vanilkový extrakt'],
+steps:['Do uzavíratelné sklenice nebo boxu odměř 80 g ovesných vloček.','Přidej 150 g řeckého jogurtu a 30 g proteinového prášku.','Vmíchej 80 ml studené vody nebo mléka, vše důkladně promíchej.','Přidej špetku skořice a lžičku medu, znovu promíchej.','Uzavři a vlož do lednice na minimálně 6 hodin (ideálně přes noc).','Ráno ozdobit 100 g borůvek – a v boxu přímo do práce.']},
+{id:'s02',name:'Tvaroh s ovocem a chia semínky',cat:'sn',time:'3 min',prot:'~29 g',
+ing:[{n:'tvaroh hladký (měkký)',q:250,u:'g',sc:'Mléčné'},{n:'banán',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'jahody nebo borůvky',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'chia semínka',q:20,u:'g',sc:'Doplňky'}],
+pantry:['med'],
+steps:['Do boxu přendej 250 g hladkého tvarohu.','Přidej lžičku medu a jemně promíchej vidličkou.','Banán nakrájej na plátky přímo do boxu.','Přidej 150 g jahod nebo borůvek (jahody předem nakrájej).','Posyp 20 g chia semínek – přidávají protein i zdravé tuky.','Uzavři a vzít do práce. Chia semínka nasáknou šťávou z ovoce.']},
+{id:'s03',name:'Řecký jogurt s granolou a čerstvým ovocem',cat:'sn',time:'3 min',prot:'~25 g',
+ing:[{n:'řecký jogurt (10 %)',q:300,u:'g',sc:'Mléčné'},{n:'granola bez přidaného cukru',q:60,u:'g',sc:'Přílohy'},{n:'čerstvé ovoce (jahody, borůvky, maliny)',q:200,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['med'],
+steps:['Do sklenice nebo boxu přendej 300 g řeckého jogurtu.','Přidej 60 g granoly – pokud chceš křupavou, přidej ji až před jídlem.','Nakrájené ovoce rozlož navrch.','Přikap lžičkou medu.','Uzavři – granola zůstane křupavá přibližně 1–2 hodiny.']},
+{id:'s04',name:'Proteinový shake s banánem a mandlovým máslem',cat:'sn',time:'4 min',prot:'~38 g',
+ing:[{n:'proteinový prášek (čokoláda nebo vanilka)',q:60,u:'g',sc:'Doplňky'},{n:'banán (zralý)',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'mandlové máslo',q:2,u:'lžíce',sc:'Doplňky'},{n:'ovesné vločky',q:40,u:'g',sc:'Přílohy'}],
+pantry:['mléko nebo rostlinné mléko'],
+steps:['Do mixéru vhoď 2 zralé banány – čím zralejší, tím sladší.','Přidej 60 g proteinového prášku a 2 lžíce mandlového másla.','Vsyp 40 g ovesných vloček pro vlákninu a delší sytost.','Přidej 350 ml studeného mléka nebo rostlinné alternativy.','Mixuj 30–40 sekund do hladka.','Přelij do shakeru nebo termosky. Podávat do 4 hodin.']},
+{id:'s05',name:'Celozrnný wrap s cottage cheese a zeleninou',cat:'sn',time:'5 min',prot:'~26 g',
+ing:[{n:'celozrnná tortilla (velká)',q:2,u:'ks',sc:'Přílohy'},{n:'cottage cheese',q:200,u:'g',sc:'Mléčné'},{n:'paprika (červená nebo žlutá)',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'},{n:'rajče',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['sůl','mletý pepř','sušený oregán'],
+steps:['Tortillu polož naplocho na pracovní plochu.','Pomocí lžíce rovnoměrně rozetři 100 g cottage cheese na celou plochu, ponech 2 cm okraj.','Osolíme, opepříme a posyp špetkou oregánu.','Papriku nakrájej na tenké proužky, okurku na kolečka, rajče na plátky.','Zeleninu seřaď do pruhu uprostřed tortilly.','Zaroluj pevně od spodního okraje, postranní kraje přelož dovnitř.','Zabalit pevně do potravinářské fólie nebo dej do boxu.']},
+{id:'s06',name:'Vejce natvrdo s celozrnným chlebem a zeleninou',cat:'sn',time:'13 min',prot:'~28 g',
+ing:[{n:'vejce (M–L)',q:4,u:'ks',sc:'Mléčné'},{n:'celozrnný chléb',q:4,u:'plátky',sc:'Přílohy'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['sůl','mletý pepř','plnotučná hořčice'],
+steps:['Vejce vyjmi z lednice 10 min předem – tepelný šok způsobuje praskání skořápky.','Vlož vejce do hrnce, zalij studenou vodou tak, aby byla ponořená o 1 cm.','Přiveď k varu, stáhni na mírný oheň a vař přesně 10 minut.','Scedíme a vejce okamžitě ponoř do misky s ledovou vodou na 3 minuty.','Oloupej, osolíme a vlož do boxu spolu s nakrájenou zeleninou a chlebem.','V práci namáchej chléb do hořčice a jez s vejci a zeleninou.']},
+{id:'s07',name:'Skyr s ovocem a opékanými mandlemi',cat:'sn',time:'4 min',prot:'~27 g',
+ing:[{n:'skyr (přírodní)',q:300,u:'g',sc:'Mléčné'},{n:'čerstvé ovoce (mango, jahody nebo maliny)',q:200,u:'g',sc:'Ovoce & zelenina'},{n:'mandle (celé nebo plátky)',q:30,u:'g',sc:'Doplňky'}],
+pantry:['med','mletá skořice'],
+steps:['Mandle lehce opékej na suché pánvi 2–3 minuty na středním ohni do zlatova a vůně – dávej pozor, rychle se spálí.','Skyr přendej do sklenice nebo boxu.','Přidej čajovou lžičku medu a jemně promíchej.','Ovoce umyj, nakrájej a přidej navrch.','Posyp opékanými mandlemi – přidávají protein a zdravé tuky.','Uzavři a vzít s sebou.']},
+{id:'s08',name:'Smoothie s tvarohjem a jahodami do termosky',cat:'sn',time:'5 min',prot:'~34 g',
+ing:[{n:'tvaroh hladký',q:200,u:'g',sc:'Mléčné'},{n:'banán (zralý)',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'jahody (čerstvé nebo mražené)',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'proteinový prášek',q:30,u:'g',sc:'Doplňky'}],
+pantry:['mléko (200 ml)','vanilkový extrakt'],
+steps:['Banány ouloupej a vlož do mixéru.','Přidej 200 g tvarohu, 30 g proteinového prášku a 150 g jahod.','Přilij 200 ml studeného mléka.','Přidej pár kapek vanilky.','Mixuj 45 sekund do zcela hladké konzistence.','Přelij do termosky – drží chlad 5–6 hodin. Pít do 4 hodin od přípravy.']},
+{id:'s09',name:'Rýžové chlebíčky s tuňákem a cottage cheese',cat:'sn',time:'6 min',prot:'~30 g',
+ing:[{n:'rýžové chlebíčky (neslazené)',q:8,u:'ks',sc:'Přílohy'},{n:'tuňák v nálevu',q:1,u:'konzerva (185g)',sc:'Ryby'},{n:'cottage cheese',q:100,u:'g',sc:'Mléčné'},{n:'cherry rajčata',q:100,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['sůl','mletý pepř','citronová šťáva','čerstvá pažitka nebo jarní cibulka'],
+steps:['Tuňák sceď přes sítko – zbav ho co nejvíce tekutiny, aby namočil chlebíčky.','V misce smíchej tuňáka s 100 g cottage cheese.','Dochutíme solí, pepřem a pár kapkami citronové šťávy.','Přidej nakrájenou pažitku nebo jarní cibulku.','Rozetři směs na rýžové chlebíčky.','Přidej napůl rozkrojená cherry rajčata.','Zabalit volně do fólie nebo dej do boxu s víkem.']},
+{id:'s10',name:'Cottage cheese s celozrnným chlebem a zeleninou',cat:'sn',time:'3 min',prot:'~24 g',
+ing:[{n:'cottage cheese',q:300,u:'g',sc:'Mléčné'},{n:'celozrnný chléb',q:4,u:'plátky',sc:'Přílohy'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'ředkvičky',q:100,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['sůl','mletý pepř','čerstvá pažitka'],
+steps:['Cottage cheese přendej do malého boxu.','Osolíme, opepříme a přidej nakrájenou pažitku.','Papriku a ředkvičky umyj a nakrájej na plátky nebo kostičky.','Zeleninu dej do druhého oddílu boxu nebo zvláštního sáčku.','Chléb zabalit zvlášť do fólie – zůstane čerstvý.','V práci mazat chléb cottage cheese a jíst se zeleninou.']},
+{id:'s11',name:'Čokoládový proteinový pudink z tvarohu',cat:'sn',time:'5 min',prot:'~32 g',
+ing:[{n:'tvaroh hladký',q:300,u:'g',sc:'Mléčné'},{n:'banán (zralý)',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'proteinový prášek (čokoláda)',q:30,u:'g',sc:'Doplňky'}],
+pantry:['přírodní kakao (10 g)','med (10 g)','skořice','mléko (splash)'],
+steps:['Banán ouloupej a rozmačkej vidličkou v misce na hladké pyré.','Přidej 300 g tvarohu a 30 g čokoládového proteinu.','Vsyp lžíci kakaa pro intenzivnější chuť.','Přidej lžičku medu a špetku skořice.','Vmíchej trochou mléka (1–2 lžíce) pro krémovější konzistenci.','Zamíchej intenzivně vidličkou nebo malou metlou do hladka.','Přendej do sklenice nebo boxu. Drží v lednici 2 dny.']},
+{id:'s12',name:'Müsli s jogurtem a čerstvým ovocem',cat:'sn',time:'3 min',prot:'~22 g',
+ing:[{n:'celozrnné müsli bez přidaného cukru',q:80,u:'g',sc:'Přílohy'},{n:'řecký jogurt',q:200,u:'g',sc:'Mléčné'},{n:'čerstvé ovoce',q:150,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['med (volitelně)'],
+steps:['Jogurt přendej do boxu nebo sklenice.','Přidej ovoce – borůvky, jahody, maliny nebo nakrájené broskve.','Přisyp 80 g müsli – pokud chceš křupavé, přidej až při konzumaci.','Volitelně přikap lžičkou medu.','Uzavři a vzít. Müsli trochu změkne, ale chuťově stále výborné.']},
+{id:'s13',name:'Toast s avokádem a vejcem natvrdo',cat:'sn',time:'13 min',prot:'~24 g',
+ing:[{n:'celozrnný toustový chléb',q:4,u:'plátky',sc:'Přílohy'},{n:'avokádo (zralé)',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'vejce',q:4,u:'ks',sc:'Mléčné'},{n:'cherry rajčata',q:100,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['sůl','mletý pepř','citronová šťáva','chilli vločky'],
+steps:['Vejce uvař natvrdo (viz recept s vejci) – 10 minut od varu.','Zchladit v ledové vodě, oloupat a nakrájej na půlky.','Avokádo překroj napůl, vyjmi pecku. Lžící vydlabej dužinu do misky.','Rozmačkej vidličkou, přidej citronovou šťávu, sůl a chilli vločky.','Toast připrav ráno (nebo vlož do boxu spolu s ingrediencemi zvlášť).','V práci: na toast rozetři avokádo, přidej vejce a rajčata.']},
+{id:'s14',name:'Míchaná vejce se špenátem v tortille',cat:'sn',time:'10 min',prot:'~28 g',
+ing:[{n:'vejce',q:6,u:'ks',sc:'Mléčné'},{n:'celozrnná tortilla',q:2,u:'ks',sc:'Přílohy'},{n:'baby špenát',q:80,u:'g',sc:'Ovoce & zelenina'},{n:'cottage cheese',q:100,u:'g',sc:'Mléčné'}],
+pantry:['olivový olej','sůl','mletý pepř','česnek (1 stroužek)'],
+steps:['Na pánvi rozehřej lžičku olivového oleje na střední plamen.','Přidej stroužek prolisovaného česneku, orestuj 30 sekund.','Vsyp baby špenát a míchej 1 minutu – špenát splaskne na třetinu.','Vejce rozklepni do misky, osolíme, opepříme a rozšlehej vidličkou.','Přilij vejce na špenát a míchej dřevěnou vařečkou – pomalu, na mírném ohni.','Odstavíme mírně před dotažením – dovaří se ze zbytku tepla.','Na tortillu rozetři cottage cheese, přidej scrambled eggs.','Zaroluj pevně, zabalit do fólie – skvělé i vlažné nebo studené.']},
+{id:'s15',name:'Banánové ovsené muffiny (meal prep)',cat:'sn',time:'30 min (na 6 ks)',prot:'~26 g / 2 ks',
+ing:[{n:'ovesné vločky (jemné)',q:200,u:'g',sc:'Přílohy'},{n:'banány (zralé)',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'vejce',q:4,u:'ks',sc:'Mléčné'},{n:'borůvky',q:100,u:'g',sc:'Ovoce & zelenina'},{n:'proteinový prášek',q:40,u:'g',sc:'Doplňky'}],
+pantry:['med (30 g)','skořice','vanilka','prášek do pečiva','špetka soli'],
+steps:['Troubu předehřej na 180 °C (horkovzdušná 165 °C). Formičky na muffiny vymaž nebo vyloži papírovými košíčky.','Banány ouloupej a rozmačkej v míse vidličkou na hladké pyré.','Přidej 4 vejce, 30 g medu a vanilku. Vše promíchej.','Vsyp 200 g ovesných vloček, 40 g proteinu, prášek do pečiva, skořici a sůl.','Zamíchej pouze do spojení – nepřemíchej, bylo by tuhé.','Lžící plň formičky asi do 3/4. Do každého vmáčkni pár borůvek.','Pečíme 18–22 minut, do zapíchnutého špejle čistého.','Nechej 10 minut chladit, pak vyklopit. Uchovávaj v lednici 4 dny nebo zmrazíme.']},
+{id:'s16',name:'Proteinová miska s ricottou a ovocem',cat:'sn',time:'4 min',prot:'~28 g',
+ing:[{n:'ricotta',q:200,u:'g',sc:'Mléčné'},{n:'proteinový prášek (vanilka)',q:30,u:'g',sc:'Doplňky'},{n:'čerstvé ovoce',q:200,u:'g',sc:'Ovoce & zelenina'},{n:'vlašské ořechy',q:25,u:'g',sc:'Doplňky'}],
+pantry:['med','skořice'],
+steps:['Ricottu přendej do boxu nebo sklenice.','Vmíchej 30 g vanilkového proteinu – ricotta ho dobře absorbuje.','Přidej lžičku medu a špetku skořice.','Navrch přidej nakrájené ovoce.','Posyp nakrájenými vlašskými ořechy.','Uzavři a vzít. Výborné i druhý den z lednice.']},
+{id:'s17',name:'Kefír s proteinem a ovsem',cat:'sn',time:'3 min',prot:'~30 g',
+ing:[{n:'kefír (přírodní)',q:250,u:'ml',sc:'Mléčné'},{n:'ovesné vločky',q:50,u:'g',sc:'Přílohy'},{n:'proteinový prášek',q:25,u:'g',sc:'Doplňky'},{n:'banán',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['med','skořice'],
+steps:['Do shakeru nebo termosky přelij 250 ml kefíru.','Přidej 25 g proteinu a zatřes – kefír protein dobře rozmíchá.','Přidej ovesné vločky a plátky banánu.','Přidej lžičku medu a skořici.','Uzavři – konzumovat do 2 hodin, jinak vločky příliš nasáknou.']},
+{id:'s18',name:'Vaječná omeleta s tuňákem a zeleninou',cat:'sn',time:'10 min',prot:'~36 g',
+ing:[{n:'vejce',q:4,u:'ks',sc:'Mléčné'},{n:'tuňák v nálevu',q:1,u:'konzerva',sc:'Ryby'},{n:'paprika',q:0.5,u:'ks',sc:'Ovoce & zelenina'},{n:'celozrnný chléb',q:2,u:'plátky',sc:'Přílohy'}],
+pantry:['olivový olej','sůl','pepř','špenát nebo rukola'],
+steps:['Vejce rozšlehej v misce se solí a pepřem.','Na pánvi s olivovým olejem (střední plamen) opékej paprika 2 minuty.','Přidej scedit tuňáka, promíchej, opékej 1 minutu.','Přilij rozšlehaná vejce a míchej jen na začátku – pak nech tuhnout.','Přidej baby špenát nebo rukolu, přelož omeletu napůl.','Konzumovat teplou nebo dej do boxu – výborná i studená. Servírovat s chlebem.']},
+{id:'s19',name:'Proteinová granola bowl',cat:'sn',time:'5 min',prot:'~26 g',
+ing:[{n:'řecký jogurt',q:200,u:'g',sc:'Mléčné'},{n:'domácí nebo kupovaná granola',q:70,u:'g',sc:'Přílohy'},{n:'borůvky nebo maliny',q:100,u:'g',sc:'Ovoce & zelenina'},{n:'konopná semínka',q:15,u:'g',sc:'Doplňky'}],
+pantry:['med','skořice'],
+steps:['Jogurt přendej do boxu nebo sklenice.','Přidej ovoce navrch.','Posyp granolou – pokud cestuješ, přidej ji do zvláštního sáčku.','Posyp konopnými semínky pro extra protein a zdravé tuky.','Přikap medem, uzavři a vzít.']},
+{id:'s20',name:'Sýrový toast se šunkou a zeleninou',cat:'sn',time:'8 min',prot:'~30 g',
+ing:[{n:'celozrnný chléb',q:4,u:'plátky',sc:'Přílohy'},{n:'krůtí šunka (low-fat)',q:100,u:'g',sc:'Drůbež'},{n:'tvrdý sýr (eidam 30 %)',q:60,u:'g',sc:'Mléčné'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['hořčice','pepř','rukola nebo salát'],
+steps:['Chléb vlož do topinkovače nebo opékej na suché pánvi.','Mezitím nakrájej sýr na tenké plátky, šunku přelož.','Na teplý toast polož šunku, sýr a plátky rajčete.','Přidej lžičku hořčice a hrst rukoly nebo salátu.','Pro přenos zabalit každý toast zvlášť do fólie nebo papíru.','Konzumovat do 2 hodin – sýr zůstane chutný i za studena.']},
+// ══ KUŘECÍ (25 receptů) ══
+{id:'p01',name:'Kuřecí prsa s rýží a brokolicí',cat:'po',time:'30 min',prot:'~45 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'rýže basmati',q:160,u:'g',sc:'Přílohy'},{n:'brokolice',q:300,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek (2 stroužky)','sójová omáčka','sůl','pepř'],
+steps:['Rýži proplachni pod studenou vodou, pak vař v osolené vodě dle návodu (cca 12 min), scedíme.','Kuřecí prsa nakrájej na dva stejné filety – rovnoměrnější tloušťka = rovnoměrné propečení.','Maso osolíme ze obou stran a opepříme čerstvě mletým pepřem.','Na pánvi rozehřej 2 lžíce olivového oleje na středně silný plamen.','Kuřecí filety opékej 5 minut bez pohybu – nechej vytvořit zlatou kůrku.','Otočíme, přidej prolisovaný česnek vedle masa, pečeme dalších 4–5 minut.','Zkontroluj propečení – vnitřní teplota 74 °C nebo po naříznutí teče čirá šťáva.','Nechej 3 minuty odpočinout, pak nakrájej na plátky.','Brokolici rozděl na růžičky, orestuj s česnekem na oleji 4 minuty.','Přidej lžíci sójové omáčky, zamíchej. Rozdělit do boxů na 2–3 porce.']},
+{id:'p02',name:'Kuřecí stir-fry se zeleninou a sójou',cat:'po',time:'20 min',prot:'~42 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'paprika (různé barvy)',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'brokolice',q:200,u:'g',sc:'Ovoce & zelenina'},{n:'mrkev',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['sójová omáčka','česnek','zázvor (čerstvý nebo mletý)','sezamový olej','olivový olej','škrob na zahuštění'],
+steps:['Rýži uvař dle návodu a drž teplou. Veškerou zeleninu nakrájej na tenké proužky podobné velikosti.','Kuřecí prsa nakrájej na tenké proužky přes vlákno.','Wok nebo velkou pánev rozehřej na maximum – musí být opravdu horká pro wok efekt.','Přidej lžíci olivového oleje, pak okamžitě kuřecí proužky.','Opékej 3–4 minuty za stálého míchání, dokud není maso bílé a lehce zlatavé. Odložíme na talíř.','Na stejném woku přidej lžičku sezamového oleje, česnek a zázvor – 30 sekund.','Přidej tvrdší zeleninu (mrkev, brokolice), restuj 2 minuty.','Přidej měkčí zeleninu (paprika), restuj 1–2 minuty.','Vrátíme kuřecí maso, přilij 3 lžíce sójové omáčky. Promíchej.','Volitelně zahusti lžičkou škrobu rozmíchaného ve 2 lžících vody. Podávat ihned s rýží.']},
+{id:'p03',name:'Kuřecí polévka se zeleninou a nudlemi',cat:'po',time:'45 min',prot:'~38 g',
+ing:[{n:'kuřecí prsa nebo stehna',q:400,u:'g',sc:'Drůbež'},{n:'mrkev',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'celer (bulva nebo stonek)',q:100,u:'g',sc:'Ovoce & zelenina'},{n:'celozrnné nudle (široké)',q:120,u:'g',sc:'Přílohy'},{n:'pórko',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['kuřecí vývar (1 litr)','sůl','pepř','bobkový list','nové koření (3 kuličky)','čerstvá petržel'],
+steps:['Ve velkém hrnci přiveď 1 litr kuřecího vývaru k varu.','Kuřecí maso vlož celé do vývaru. Přidej bobkový list a nové koření.','Vař na mírném ohni 25 minut – maso musí být zcela uvařené.','Maso vyjmi, nechej 5 minut chladit, pak vidličkami roztrhej na vlákna.','Mezitím přidej do vývaru nakrájenou mrkev a celer – vař 8 minut.','Přidej nudle a pórko nakrájené na kolečka – vař dle doby na nudlích (cca 7–8 min).','Vrátíme maso, dochutíme solí a pepřem.','Při servírování posyp čerstvou petrželí. Polévka chutná nejlépe druhý den.']},
+{id:'p04',name:'Pečené kuřecí stehno se sladkými bramborami',cat:'po',time:'45 min',prot:'~42 g',
+ing:[{n:'kuřecí stehna bez kosti',q:400,u:'g',sc:'Drůbež'},{n:'sladké brambory (batáty)',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'cuketa',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek (3 stroužky)','uzená paprika','tymián','sůl','pepř'],
+steps:['Troubu předehřej na 200 °C (horkovzdušnou na 185 °C).','Batáty ouloupej a nakrájej na kostičky 2×2 cm. Cuketu na půlkolečka.','V míse promíchej zeleninu s 2 lžícemi olivového oleje, solí, pepřem a tymiánem.','Kuřecí stehna potři ze všech stran prolisovaným česnekem, uzenou paprikou, solí a olejem.','Zeleninu rozlož na velký plech, kuřecí maso ulož navrch kůží nahoru.','Pečíme 35–40 minut – kůže musí být zlatavá a křupavá.','Zkontroluj propečení (vnitřní teplota 82 °C nebo čirá šťáva).','Nechej 5 minut odpočinout, rozdělit do boxů na 2 dny.']},
+{id:'p05',name:'Kuřecí tikka masala s rýží',cat:'po',time:'35 min',prot:'~46 g',
+ing:[{n:'kuřecí prsa',q:350,u:'g',sc:'Drůbež'},{n:'rýže basmati',q:160,u:'g',sc:'Přílohy'},{n:'rajčata konzervovaná (celá nebo nakrájená)',q:400,u:'g',sc:'Přílohy'},{n:'řecký jogurt',q:100,u:'g',sc:'Mléčné'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek (3 stroužky)','čerstvý zázvor (2 cm)','kurkuma','garam masala','paprika','chilli','sůl'],
+steps:['Kuřecí prsa nakrájej na kostičky 2×2 cm.','V míse smíchej jogurt s kurkumou, paprikou a solí. Přidej kuřecí a dobře promíchej.','Marinovat min. 20 minut pokojové teploty (nebo přes noc v lednici).','Cibuli nakrájej najemno, orestuj na oleji 8 minut do zlatova.','Přidej česnek a zázvor nastrouhaný najemno – orestuj 1 minutu.','Přidej garam masala, chilli a kmín – orestuj koření 30 sekund.','Přidej marinované kuřecí i se zbytkem marinády.','Opékej 5 minut za míchání.','Přidej rajčata, rozbij je lžící. Vař 15 minut na mírném ohni.','Rýži uvař zvlášť. Tikka masala je výborná druhý a třetí den.']},
+{id:'p06',name:'Kuřecí gyros s tzatziki a pita chlebem',cat:'po',time:'25 min',prot:'~44 g',
+ing:[{n:'kuřecí prsa',q:350,u:'g',sc:'Drůbež'},{n:'celozrnný pita chléb',q:4,u:'ks',sc:'Přílohy'},{n:'řecký jogurt',q:150,u:'g',sc:'Mléčné'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','oregano','kumin','paprika','sůl','pepř'],
+steps:['Kuřecí prsa nakrájej na tenké proužky přes vlákno.','Smíchej s olejem, česnekem, oreganem, paprikou a solí. Marinovat 10 min.','Tzatziki: okurku nastruhej nahrubo, ručně vymaň – zbav přebytku šťávy.','Smíchej s jogurtem, prolisovaným česnekem, trochou olivového oleje a solí.','Pánev rozehřej na silný plamen, kuřecí opékej 5–6 minut do zlatavých okrajů.','Pita chléb nahřej v troubě nebo na suché pánvi 1 minutu z každé strany.','Plnit: pita + tzatziki + kuřecí + rajčata. Zabalit do fólie pro přenos.']},
+{id:'p07',name:'Kuřecí Buddha bowl s quinoou a avokádem',cat:'po',time:'30 min',prot:'~47 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'quinoa',q:150,u:'g',sc:'Přílohy'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'baby špenát',q:100,u:'g',sc:'Ovoce & zelenina'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','sůl','pepř','citronová šťáva','česnek'],
+steps:['Quinoa: proplachni pod studenou vodou 1 minutu (odstraní hořkost). Vař v poměru 1:2 se studenou osolenou vodou. Přiveď k varu, zakryj a vař na mírném ohni 15 minut. Nes tat, 5 min.','Kuřecí prsa opéci na olivovém oleji 5 minut z každé strany.','Nechej 5 minut odpočinout, pak nakrájej na plátky diagonálně.','Avokádo překroj napůl, vyjmi pecku, vydlabej dužinu lžící.','Nakrájej na plátky nebo kostičky, okamžitě překapatý citronovou šťávou (zabrání ztmavnutí).','Bowl sestavit: quinoa jako základ + špenát + kuřecí plátky + avokádo + rajčata.','Zálivka: 2 lžíce olivového oleje + lžíce citronové šťávy + sůl + pepř. Přelit před podáváním.']},
+{id:'p08',name:'Kuřecí fajitas se zeleninou',cat:'po',time:'20 min',prot:'~42 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'celozrnná tortilla',q:4,u:'ks',sc:'Přílohy'},{n:'paprika (3 různé barvy)',q:3,u:'ks',sc:'Ovoce & zelenina'},{n:'červená cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','kumin','uzená paprika','chilli','sůl','pepř','limetka'],
+steps:['Kuřecí prsa nakrájej na proužky přes vlákno (2×6 cm).','V míse smíchej s kuminem, paprikou, chilli, česnekem, solí a kapkou oleje.','Marinovat 10 minut – mezitím nakrájej zeleninu na tenké proužky.','Pánev rozehřej na silný plamen, přidej lžíci oleje.','Kuřecí opékej 4–5 minut za míchání, oddělí a odlož na talíř.','Na stejné pánvi restuj zeleninu 3 minuty – má být al dente, ne rozvařená.','Vrátíme kuřecí, zamíchej, přilij trochu limetkové šťávy.','Servírovat na nahřáté tortille. Pro přenos: náplň bez tortill zvlášť do boxu.']},
+{id:'p09',name:'Kuřecí karbanátky s bramborovou kaší',cat:'po',time:'35 min',prot:'~44 g',
+ing:[{n:'kuřecí mleté maso',q:400,u:'g',sc:'Drůbež'},{n:'vejce',q:2,u:'ks',sc:'Mléčné'},{n:'brambory',q:500,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','sůl','pepř','česnek (2 stroužky)','čerstvá petržel','máslo (20 g)','mléko (100 ml)','muškátový oříšek'],
+steps:['Brambory ouloupej, nakrájej na čtvrtky. Vař v osolené vodě 20 minut do měkkosti.','Mleté kuřecí smíchej s vejci, prolisovaným česnekem, solí, pepřem a nasekanou petrželí.','Tvaruj kulatými nebo oválnými tvary – měl by ti vyjít přibližně 8 ks.','Na pánvi rozehřej 2 lžíce olivového oleje na střední plamen.','Karbanátky opékej 4–5 minut z každé strany do zlatohněda.','Zkontroluj propečení – vnitřní teplota 74 °C nebo rozkrojíme a zkontrolujeme.','Brambory scedíme, vrátíme do hrnce a rozmačkej bramborem.','Přidej teplé mléko, máslo, sůl a muškátový oříšek. Šlehej do hladka.','Rozdělit do boxů – kašmír 2 dny v lednici.']},
+{id:'p10',name:'Kuřecí wrap s hummusem a zeleninou',cat:'po',time:'15 min',prot:'~40 g',
+ing:[{n:'kuřecí prsa (vařené nebo grilované)',q:300,u:'g',sc:'Drůbež'},{n:'celozrnná tortilla',q:4,u:'ks',sc:'Přílohy'},{n:'hummus',q:150,u:'g',sc:'Přílohy'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'baby špenát',q:80,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['sůl','mletý pepř','citronová šťáva'],
+steps:['Kuřecí prsa uvař nebo opéci – pak nakrájej na tenké proužky.','Na tortillu naštědře rozetři hummus, ponech 2 cm okraj.','Přidej hrst baby špenátu, pak kuřecí proužky.','Přidej nakrájenou papriku a squeeze citronu.','Osolíme, opepříme.','Zaroluj pevně: nejdříve zaroluj spodní okraj přes náplň, pak přelož strany a doroluj.','Zabalit do potravinářské fólie. Vydrží 6 hodin v boxu.']},
+{id:'p11',name:'Kuřecí prsa v bylinkové marinádě s quinoou',cat:'po',time:'35 min',prot:'~46 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'quinoa',q:150,u:'g',sc:'Přílohy'},{n:'brokolice',q:250,u:'g',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','tymján','rozmarýn','oregán','sůl','pepř'],
+steps:['Marinada: smíchej 3 lžíce olivového oleje, šťávu z půlky citronu, prolisovaný česnek a bylinky.','Kuřecí prsa nalij marinádou, masíruj 2 minuty. Marinovat 15 min.','Quinoa: proplachni, pak vař ve 300 ml osolené vody 15 minut. Odstavíme, přikrytá 5 min.','Kuřecí griluj na grilovací pánvi (nebo opéci na klasické) 5 minut z každé strany.','V troubě na 200 °C dodělej 5–8 minut – záleží na tloušťce.','Nechej 5 min odpočinout, nakrájej na plátky.','Brokolici orestuj na oleji s česnekem 4 minuty.','Rozdělit do boxů s quinoou.']},
+{id:'p12',name:'Kuřecí nudle wok s arašídovou omáčkou',cat:'po',time:'22 min',prot:'~42 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'celozrnné nudle',q:160,u:'g',sc:'Přílohy'},{n:'mrkev',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'zelené fazolky',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'arašídové máslo',q:3,u:'lžíce',sc:'Doplňky'}],
+pantry:['sójová omáčka','česnek','zázvor','sezamový olej','limetka','med'],
+steps:['Nudle uvař al dente (2 minuty méně než na obalu), scedíme.','Omáčka: smíchej 3 lžíce arašídového másla, 2 lžíce sójové omáčky, lžičku medu, šťávu z půlky limetky a trochu horkého vývaru nebo vody na hustou omáčku.','Kuřecí nakrájej na proužky, opéci na silném ohni 4 minuty.','Odložíme, zeleninu restuj 3 minuty.','Přidej scedené nudle, arašídovou omáčku, kuřecí.','Vše propíchni šlahačem nebo opékej 1 minutu za stálého míchání.','Posyp sezamem a nasekanou jarní cibulkou.']},
+{id:'p13',name:'Kuřecí rizoto se špenátem a parmazánem',cat:'po',time:'38 min',prot:'~40 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'rýže (arborio nebo kulatozrnná)',q:160,u:'g',sc:'Přílohy'},{n:'baby špenát',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'parmazán strouhaný',q:30,u:'g',sc:'Mléčné'}],
+pantry:['olivový olej','česnek','bílé víno (100 ml)','kuřecí vývar (700 ml)','máslo (20 g)','sůl','pepř','muškátový oříšek'],
+steps:['Vývar ohřej v kastrůlku – vždy přilévej teplý vývar, to je klíč k dobrému rizotu.','Kuřecí prsa nakrájej na kostičky, opéci na oleji 4 minuty, odložíme.','V hlubokém kastrůlku osmahni cibuli a česnek na oleji 5 minut do sklovita.','Přidej rýži, orestuj za stálého míchání 2 minuty – zrníčka budou průhledná na okrajích.','Přilij víno, míchej, dokud se neodpaří – asi 2 minuty.','Přilévej vývar po naběračkách za stálého míchání. Vždy přidej další až když předchozí vsákne.','Po 18–20 minutách musí být rýže al dente.','Vmíchej špenát – splaskne za 1 minutu.','Odstavíme, vmíchej máslo a parmazán, přidej kuřecí.','Zakryj a nechej 2 minuty stát. Podávat ihned nebo přendej do boxu.']},
+{id:'p14',name:'Zapečené kuřecí s rajčaty a mozzarellou',cat:'po',time:'40 min',prot:'~48 g',
+ing:[{n:'kuřecí prsa',q:400,u:'g',sc:'Drůbež'},{n:'rajčata',q:3,u:'ks',sc:'Ovoce & zelenina'},{n:'mozzarella light (125 g)',q:125,u:'g',sc:'Mléčné'},{n:'celozrnné těstoviny',q:160,u:'g',sc:'Přílohy'}],
+pantry:['olivový olej','česnek','bazalka','oregán','sůl','pepř'],
+steps:['Troubu předehřej na 200 °C.','Kuřecí prsa horizontálně nakrájej na 2 tenčí filety z každého.','Osolíme, opepříme, opékej na oleji 3 minuty z každé strany do zlatova.','Přemísti do pekáče.','Rajčata nakrájej na plátky, rozlož navrch kuřecích filetů.','Přidej lístky bazalky, posyp oregánem, zakryj plátky mozzarelly.','Zakapal olejem, přidej prolisovaný česnek kolem masa.','Péci 20–25 minut – sýr musí být zlatavý a bublat.','Těstoviny uvař dle návodu. Podávat ihned nebo přendej do boxů.']},
+{id:'p15',name:'Kuřecí prsa s houbovou omáčkou',cat:'po',time:'30 min',prot:'~45 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'žampiony',q:300,u:'g',sc:'Ovoce & zelenina'},{n:'smetana ke vaření (12 %)',q:100,u:'ml',sc:'Mléčné'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','sůl','pepř','čerstvá petržel','muškátový oříšek'],
+steps:['Rýži uvař dle návodu.','Kuřecí prsa opéci na oleji 5 minut z každé strany – zlatavé a propečené. Odložíme na talíř.','Na stejné pánvi osmahni nakrájenou cibuli a česnek 4 minuty.','Žampiony nakrájej na čtvrtky nebo plátky, přidej, restuj 5–7 minut, dokud voda nevypaří.','Přilij smetanu, přidej muškátový oříšek, sůl a pepř.','Vař na mírném ohni 3 minuty do mírného zhoustnutí.','Kuřecí prsa nakrájej na plátky, vrátíme do omáčky.','Posyp petrželí. Podávat s rýží.']},
+// ══ KRŮTÍ (12 receptů) ══
+{id:'t01',name:'Krůtí bolognese s celozrnými těstovinami',cat:'po',time:'35 min',prot:'~46 g',
+ing:[{n:'krůtí mleté maso',q:400,u:'g',sc:'Drůbež'},{n:'celozrnné těstoviny',q:160,u:'g',sc:'Přílohy'},{n:'rajčata konzervovaná (passata nebo celá)',q:400,u:'g',sc:'Přílohy'},{n:'mrkev',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','oregán','bazalka','červené víno (volitelně)','sůl','pepř','parmazán'],
+steps:['Cibuli a mrkev nakrájej najemno (soffritto). Orestuj na oleji 8 minut do zlatova.','Přidej prolisovaný česnek, orestuj 1 minutu.','Přidej krůtí mleté maso, rozbíjej lžičkou na drobné kousky.','Opékej 6–8 minut, dokud není maso zcela bílé a mírně zlatavé.','Volitelně přilij 50 ml červeného vína, odpař na polovinu – 3 minuty.','Přidej rajčata, oregán, bazalku, sůl a pepř.','Vař na mírném ohni 20 minut bez pokličky – omáčka zhoustne.','Těstoviny uvař al dente dle návodu. Smíchej nebo servírovat zvlášť.','Chutná nejlépe druhý a třetí den.']},
+{id:'t02',name:'Krůtí burger s avokádem a salátem',cat:'po',time:'22 min',prot:'~48 g',
+ing:[{n:'krůtí mleté maso',q:400,u:'g',sc:'Drůbež'},{n:'celozrnná bulka',q:4,u:'ks',sc:'Přílohy'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'ledový salát',q:80,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['sůl','pepř','česnek (granulovaný)','cibulový prášek','worcester (1 lžička)','olivový olej','plnotučná hořčice'],
+steps:['Mleté krůtí smíchej s granulovaným česnekem, cibul. práškem, solí, pepřem a worcestrem.','Tvaruj 4 burger placičky – každá asi 100 g. Uprostřed každé udělej palcem malou prohlubeň (zabrání vydutí při pečení).','Pánev rozehřej na středně silný plamen s lžící oleje.','Burgery opékej 4–5 minut z každé strany – nepřitlačuj, šťáva by vytekla.','Vnitřní teplota musí dosáhnout 74 °C – krůtí maso nesmí být růžové.','Avokádo rozmačkej s trochou soli a citronové šťávy na guacamole.','Bulky zahřej nasucho v pánvi 1 minutu z každé strany.','Sestavit: bulka + hořčice + salát + burger + guacamole + plátky rajčete.']},
+{id:'t03',name:'Krůtí chili con carne (bez červeného masa)',cat:'po',time:'38 min',prot:'~50 g',
+ing:[{n:'krůtí mleté maso',q:400,u:'g',sc:'Drůbež'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'červené fazole (konzerva)',q:1,u:'konzerva (400 g)',sc:'Přílohy'},{n:'rajčata konzervovaná',q:400,u:'g',sc:'Přílohy'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','chilli (nebo čerstvé)','kumin','paprika uzená','oregán','kakao (1 lžička – tajná ingredience)','sůl'],
+steps:['Cibuli a česnek orestuj na oleji 5 minut do zlatova.','Přidej krůtí mleté maso, opékej 6 minut, rozrušuj na kousky.','Vsyp kumin, paprika, chilli, oregán a kakao – orestuj koření 1 minutu.','Přidej rajčata, scedit fazole (proplachni pod studenou vodou).','Vař na mírném ohni 20 minut – chilli zhustne a chutě se propojí.','Dochutíme – sůl, případně víc chilli.','Rýži uvař zvlášť. Chili ještě lepší druhý a třetí den.']},
+{id:'t04',name:'Krůtí wrap s quinoou a grilovanou zeleninou',cat:'po',time:'30 min',prot:'~42 g',
+ing:[{n:'krůtí prsa',q:300,u:'g',sc:'Drůbež'},{n:'quinoa',q:150,u:'g',sc:'Přílohy'},{n:'celozrnná tortilla',q:4,u:'ks',sc:'Přílohy'},{n:'cuketa',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','kumin','sůl','pepř'],
+steps:['Quinoa: proplachni, uvař v 300 ml osolené vody 15 minut. Odstavíme, přikrytá 5 min.','Krůtí prsa osolíme, opékej 5 minut z každé strany na grilovací pánvi nebo klasické.','Nechej 5 minut odpočinout, nakrájej na tenké proužky.','Zeleninu nakrájej na proužky, griluj na grilovací pánvi 3–4 minuty – vytvoří grilové pruhy.','Nebo restuj na klasické pánvi s olejem 4 minuty.','Na tortillu: 2 lžíce quinoy, krůtí proužky, grilovaná zelenina.','Zaroluj pevně, zabalit do fólie. Výborné i studené.']},
+{id:'t05',name:'Pečená krůtí prsa s batáty a špenátem',cat:'po',time:'48 min',prot:'~48 g',
+ing:[{n:'krůtí prsa (vykostěná)',q:400,u:'g',sc:'Drůbež'},{n:'sladké brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'baby špenát',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','rozmarýn','tymján','sůl','pepř'],
+steps:['Troubu předehřej na 190 °C. Batáty ouloupej a nakrájej na kostičky 2 cm.','Krůtí prsa potři olejem, prolisovaným česnekem, rozmarýnem, tymiánem, solí a pepřem.','Batáty promíchej s olejem, solí a pepřem. Rozlož na plech.','Krůtí prsa polož na střed plechu k batátům.','Pečíme 35–40 minut (vnitřní teplota 74 °C).','10 minut před koncem přidej batáty jen pokud jsou stále tvrdé.','Špenát orestuj na pánvi s česnekem a olivovým olejem 2 minuty, přidej citronovou šťávu.','Rozdělit do boxů na 2 dny.']},
+{id:'t06',name:'Krůtí kebab s tabulé salátem',cat:'po',time:'30 min',prot:'~44 g',
+ing:[{n:'krůtí mleté maso',q:400,u:'g',sc:'Drůbež'},{n:'bulgur',q:150,u:'g',sc:'Přílohy'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','kumin','uzená paprika','čerstvá petržel (nebo kopr)','sůl','pepř'],
+steps:['Bulgur zalij vroucí osolenou vodou (1:1.5), přikryj a nechej 15–20 minut stát.','Mleté krůtí smíchej s prolisovaným česnekem, kuminem, paprikou, solí a pepřem.','Mokrýma rukama tvaruj podlouhlé kebaby (cca 10 cm) nebo kulatá kofta.','Opékej na grilovací nebo klasické pánvi 4 minuty z každé strany.','Tabulé: bulgur rozhrabej vidličkou. Přidej nakrájená rajčata, okurky a hodně petržele.','Zálivka: olivový olej + citronová šťáva + sůl + pepř.','Promíchej a podávat s kebabiami.']},
+{id:'t07',name:'Krůtí stroganoff s rýží',cat:'po',time:'32 min',prot:'~46 g',
+ing:[{n:'krůtí prsa',q:350,u:'g',sc:'Drůbež'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'žampiony',q:250,u:'g',sc:'Ovoce & zelenina'},{n:'smetana ke vaření (12 %)',q:150,u:'ml',sc:'Mléčné'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','sůl','pepř','paprika sladká','dijonská hořčice (1 lžíce)','petržel'],
+steps:['Rýži uvař dle návodu.','Krůtí prsa nakrájej na tenké proužky přes vlákno.','Na silně rozehřáté pánvi opékej krůtí proužky 3 minuty z každé strany. Odložíme.','Cibuli nakrájej na půlkruhy, orestuj na oleji 5 minut do zlatova.','Žampiony nakrájej na čtvrtky, přidej, restuj 5–6 minut, dokud voda nevypaří.','Přidej paprika, česnek – orestuj 1 minutu.','Přilij smetanu, hořčici, sůl a pepř. Vař 4 minuty.','Vrátíme krůtí proužky, prohřej 2 minuty. Posyp petrželí.']},
+// ══ RYBY (20 receptů) ══
+{id:'f01',name:'Pečený losos se sladkými bramborami a špenátem',cat:'fi',time:'35 min',prot:'~46 g',
+ing:[{n:'losos filet (s kůží)',q:300,u:'g',sc:'Ryby'},{n:'sladké brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'baby špenát',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','tymján','sůl','pepř'],
+steps:['Troubu předehřej na 200 °C. Batáty ouloupej a nakrájej na kostičky 2 cm.','Batáty promíchej s olivovým olejem, solí, pepřem a tymiánem na plechu.','Pečíme 15 minut, pak batáty obrátíme.','Lososa osolímes, opepříme. Polož kůží dolů na pečicí papír na okraj plechu.','Pečíme dalších 12–15 minut – losos je hotový, když se tmavě růžové maso změní na světle růžové a snadno se odděluje vidličkou.','Špenát orestuj na pánvi s česnekem a olivovým olejem 2 minuty, přidej citronovou šťávu.','Servírovat vše dohromady nebo rozdělit do boxů na 2 dny.']},
+{id:'f02',name:'Tuňákový Buddha bowl s quinoou',cat:'fi',time:'20 min',prot:'~44 g',
+ing:[{n:'tuňák v nálevu',q:2,u:'konzerva (185 g)',sc:'Ryby'},{n:'quinoa',q:150,u:'g',sc:'Přílohy'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','citronová šťáva','sůl','pepř','čerstvá pažitka nebo petržel'],
+steps:['Quinoa: proplachni pod studenou vodou, pak vař v 300 ml osolené vody 15 minut. Přikrytá 5 min, pak rozhrabej vidličkou.','Zeleninu nakrájej na kostičky nebo plátky.','Tuňák sceď přes sítko – zbav ho co nejvíce nálevu.','Bowl sestavit: quinoa jako základ, zelenina kolem dokola, tuňák uprostřed.','Zálivka: 2 lžíce olivového oleje, lžíce citronové šťávy, sůl, pepř – emulguj vidličkou.','Přelit zálivkou, posyp pažitkou. Servírovat ihned nebo dát do boxu (zálivku zvlášť).']},
+{id:'f03',name:'Krevetový wok s rýží a brokolicí',cat:'fi',time:'22 min',prot:'~42 g',
+ing:[{n:'krevety (čištěné, syrové)',q:300,u:'g',sc:'Ryby'},{n:'rýže jasmínová',q:160,u:'g',sc:'Přílohy'},{n:'brokolice',q:300,u:'g',sc:'Ovoce & zelenina'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['sójová omáčka','česnek','zázvor (čerstvý)','sezamový olej','chilli','olivový olej','sezamová semínka'],
+steps:['Rýži uvař dle návodu. Krevety pokud jsou mražené, rozmraz v chladné vodě 15 minut, osuš papírovým ubrouskem.','Wok nebo velkou pánev rozehřej na maximum – opravdu silné teplo.','Přidej lžíci olivového oleje, okamžitě přidej krevety v jedné vrstvě.','Opékej 90 sekund bez pohybu – krevety zbělají a okraje zezlátnou.','Otočíms, pečeme 60 sekund – nesmí být gumové! Odložíme.','Na stejném woku přidej lžičku sezamového oleje, česnek, zázvor 30 sekund.','Přidej brokolici a papriku, restuj 3–4 minuty za silného ohně.','Přilij sójovou omáčku, přidej krevety, zamíchej, posyp sezamem.','Servírovat okamžitě s rýží.']},
+{id:'f04',name:'Pečená treska s citronem a zeleninou',cat:'fi',time:'30 min',prot:'~42 g',
+ing:[{n:'treska filet',q:400,u:'g',sc:'Ryby'},{n:'brokolice',q:300,u:'g',sc:'Ovoce & zelenina'},{n:'brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','čerstvá petržel','sůl','pepř','paprika'],
+steps:['Troubu předehřej na 200 °C. Brambory umyj a nakrájej na měsíčky nebo plátky.','Brambory promíchej s olejem, solí a pepřem, rozlož na plech.','Pečíme 15 minut.','Tresčí filety osolímes, opepříme, posyp paprikou.','Přidej filety na plech k bramborám, pokaž citronovou šťávou.','Pečíme dalších 15 minut – treska je hotová, když maso ztrácí průsvitnost.','Brokolici orestuj na pánvi s olejem a česnekem 4–5 minut.','Posyp vším petrželí, přidej citronové klínky.']},
+{id:'f05',name:'Tuňákový salát s vejcem a bílými fazolemi',cat:'fi',time:'12 min',prot:'~40 g',
+ing:[{n:'tuňák v nálevu',q:2,u:'konzerva',sc:'Ryby'},{n:'vejce',q:4,u:'ks',sc:'Mléčné'},{n:'bílé fazole (konzerva)',q:1,u:'konzerva (400 g)',sc:'Přílohy'},{n:'olív nebo kapar',q:40,u:'g',sc:'Přílohy'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','citronová šťáva','sůl','pepř','čerstvá bazalka nebo petržel'],
+steps:['Vejce uvař natvrdo 10 minut od varu, zchladit v ledové vodě, ouloupej, nakrájej na čtvrtky.','Tuňák sceď.','Fazole proplachni pod studenou vodou, sceď.','Rajčata nakrájej na půlky.','V míse smíchej tuňáka, fazole, olivy nebo kapary a rajčata.','Zálivka: 3 lžíce olivového oleje + 1 lžíce citronové šťávy + sůl + pepř.','Přidej čtvrtky vajec navrch, přelit zálivkou.','Posyp bazalkou nebo petrželí. Výborné za studena i druhý den.']},
+{id:'f06',name:'Losos v alobalu s bylinkovým máslem',cat:'fi',time:'30 min',prot:'~46 g',
+ing:[{n:'losos filet',q:300,u:'g',sc:'Ryby'},{n:'quinoa',q:150,u:'g',sc:'Přílohy'},{n:'chřest nebo brokolice',q:250,u:'g',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['máslo (20 g)','česnek','čerstvá petržel','tymján','sůl','pepř','olivový olej'],
+steps:['Troubu předehřej na 190 °C.','Bylinkové máslo: smíchej změklé máslo s prolisovaným česnekem, nasekanou petrželí a tymiánem.','Na velký kus alobalu polož lososa kůží dolů.','Navrch rozlož bylinkové máslo v plátcích.','Přidej plátky citronu a větvi tymiánu.','Alobal uzavři pevně jako balíček – pára uvnitř lososa uvaří.','Péci 20–22 minut.','Quinoa: proplachni, uvař 15 min v osolené vodě, přikrytá 5 min.','Chřest nebo brokolici orestuj 4 minuty. Podávat s quinoou.']},
+{id:'f07',name:'Losos teriyaki s rýží',cat:'fi',time:'25 min',prot:'~44 g',
+ing:[{n:'losos filet',q:300,u:'g',sc:'Ryby'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'brokolice',q:250,u:'g',sc:'Ovoce & zelenina'},{n:'jarní cibulka',q:3,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['sójová omáčka','med','česnek','zázvor (čerstvý)','sezamový olej','sezamová semínka','olivový olej'],
+steps:['Rýži uvař dle návodu.','Teriyaki omáčka: 3 lžíce sójové omáčky + 2 lžíce medu + prolisovaný česnek + nastrouhaný zázvor – smíchej v malém kastrůlku.','Zahřej na mírném ohni 2 minuty, dokud med nerozpustí a omáčka mírně nezhoustne. Odstavíme.','Lososa osolímes, opékej kůží dolů na oleji 4 minuty.','Otočíms, pečeme 3–4 minuty. Polit teriyaki omáčkou.','Brokolici orestuj na oleji 4 minuty.','Podávat lososa na rýži s brokolicí, přelit zbytkem teriyaki, posyp sezamem a jarní cibulkou.']},
+{id:'f08',name:'Krevetová pasta s česnekem a rajčaty',cat:'fi',time:'20 min',prot:'~44 g',
+ing:[{n:'krevety (čištěné)',q:300,u:'g',sc:'Ryby'},{n:'celozrnné těstoviny',q:160,u:'g',sc:'Přílohy'},{n:'cherry rajčata',q:200,u:'g',sc:'Ovoce & zelenina'},{n:'baby špenát',q:80,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek (3 stroužky)','chilli vločky','bílé víno (100 ml)','sůl','pepř','čerstvá bazalka'],
+steps:['Těstoviny uvař al dente – uchovej 100 ml vody z vaření, scedíme.','Krevety osuš, osolímes.','Na silně rozehřáté pánvi opékej krevety 90 sekund z každé strany. Odložíme.','Na stejné pánvi přidej olej, česnek a chilli – orestuj 30 sekund.','Cherry rajčata přidej, opékej 2 minuty, dokud nezměknou.','Přilij víno, nechej odpařit 2 minuty.','Přidej špenát, wiltnout 1 minutu.','Přidej těstoviny, trochu vody z vaření, krevety.','Promíchej, posyp bazalkou.']},
+{id:'f09',name:'Tuňákové těstoviny',cat:'fi',time:'25 min',prot:'~42 g',
+ing:[{n:'tuňák v nálevu',q:2,u:'konzerva',sc:'Ryby'},{n:'celozrnné těstoviny',q:160,u:'g',sc:'Přílohy'},{n:'rajčata konzervovaná',q:400,u:'g',sc:'Přílohy'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','oregán','bazalka','kapary (volitelně)','sůl','pepř'],
+steps:['Těstoviny uvař al dente dle návodu, scedíme.','Cibuli nakrájej najemno, orestuj na oleji 5 minut do zlatova.','Přidej prolisovaný česnek, orestuj 1 minutu.','Přidej rajčata, oregán, bazalku. Vař 10 minut na středním ohni.','Tuňák sceď, přimíchej do omáčky, prohřej 2 minuty.','Volitelně přidej kapary pro intenzitu chuti.','Smíchej s těstovinami. Rozdělit na 2 dny.']},
+{id:'f10',name:'Grilovaný losos s quinoou a avokádem',cat:'fi',time:'25 min',prot:'~48 g',
+ing:[{n:'losos filet',q:300,u:'g',sc:'Ryby'},{n:'quinoa',q:150,u:'g',sc:'Přílohy'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','sůl','pepř','česnek','baby špenát'],
+steps:['Quinoa: proplachni, uvař v 300 ml osolené vody 15 minut, přikrytá odstavíme 5 min.','Grilovací pánev rozehřej na silný plamen, lehce potři olejem.','Lososa osolímes, opepřímes.','Griluj kůží dolů 4–5 minut – uvidíš jak světlé maso postupuje od spodu nahoru.','Otočíms, griluj 2–3 minuty. Losos má být světle růžový uvnitř, ne šedý.','Avokádo nakrájej na plátky, okamžitě překapatý citronovou šťávou.','Bowl: quinoa + špenát + losos + avokádo + rajčata. Zálivka: olej + citron + sůl + pepř.']},
+{id:'f11',name:'Makrela s bramborami a zeleninovým salátem',cat:'fi',time:'35 min',prot:'~42 g',
+ing:[{n:'makrela (filet nebo celá)',q:400,u:'g',sc:'Ryby'},{n:'brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','čerstvá petržel','citron','sůl','pepř'],
+steps:['Brambory umyj, nakrájej na plátky, uvař v osolené vodě 18–20 minut.','Makrely osolímes, opepříme, polej citronovou šťávou.','Griluj na grilovací pánvi nebo klasické pánvi 4 minuty z každé strany.','Případně péci v troubě na 200 °C 15–18 minut.','Salát: nakrájená rajčata + okurka + olivový olej + citron + petržel + sůl.','Podávat makrely s bramborami a salátem.']},
+{id:'f12',name:'Krevetový salát s avokádem a citronovou zálivkou',cat:'fi',time:'15 min',prot:'~38 g',
+ing:[{n:'krevety (vařené, čištěné)',q:300,u:'g',sc:'Ryby'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'baby špenát',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','citronová šťáva','sůl','pepř','česnek (granulovaný)'],
+steps:['Pokud jsou krevety mražené, rozmraz v chladné vodě 15 minut, dobře osuš.','Avokádo překroj, vyjmi pecku, vydlabej dužinu a nakrájej na kostičky.','Okamžitě pokaš citronovou šťávou.','Cherry rajčata překroj napůl, okurku nakrájej na půlkolečka.','Zálivka: 3 lžíce olivového oleje + 1,5 lžíce citronové šťávy + granulovaný česnek + sůl + pepř.','V míse smíchej špenát se zeleninou, avokádem a krevetami.','Přelit zálivkou těsně před podáváním.']},
+{id:'f13',name:'Losos s červenou čočkou a špenátem',cat:'fi',time:'32 min',prot:'~50 g',
+ing:[{n:'losos filet',q:300,u:'g',sc:'Ryby'},{n:'červená čočka',q:150,u:'g',sc:'Přílohy'},{n:'baby špenát',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','kurkuma','kumin','sůl','pepř'],
+steps:['Červenou čočku proplachni pod studenou vodou.','Cibuli a česnek nakrájej najemno, orestuj na oleji 4 minuty do zlatova.','Přidej kurkumu a kumin, orestuj 30 sekund – koření musí vonet.','Přidej čočku, přilij 300 ml vody nebo vývaru.','Vař 15 minut na mírném ohni, čočka bude kašovitá – to je správné.','Přidej špenát, promíchej, wiltnout 1 minutu. Přidej citronovou šťávu, sůl.','Lososa osolímes, opékej na oleji 4 minuty z každé strany.','Servírovat lososa na čočkovém základu.']},
+{id:'f14',name:'Treska v rajčatové omáčce s rýží',cat:'fi',time:'35 min',prot:'~42 g',
+ing:[{n:'treska filet',q:400,u:'g',sc:'Ryby'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'rajčata konzervovaná',q:400,u:'g',sc:'Přílohy'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','paprika uzená','oregán','sůl','pepř','petržel'],
+steps:['Rýži uvař dle návodu.','Cibuli a papriku nakrájej, orestuj na oleji 6 minut do změknutí.','Přidej prolisovaný česnek, papriku, oregán – orestuj 1 minutu.','Přidej rajčata, rozbij na kousky lžičkou. Vař 8 minut.','Tresčí filety osolímes, opepřímes.','Polož filety do omáčky, přikryj pokličkou.','Dusit na mírném ohni 12–15 minut – treska se rozpadne na šupiny.','Posyp petrželí. Rozdělit na 2 dny.']},
+{id:'f15',name:'Krevetové rizoto se zeleninou',cat:'fi',time:'38 min',prot:'~40 g',
+ing:[{n:'krevety (syrové, čištěné)',q:300,u:'g',sc:'Ryby'},{n:'rýže arborio',q:160,u:'g',sc:'Přílohy'},{n:'hrášek (mražený)',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'parmazán strouhaný',q:30,u:'g',sc:'Mléčné'}],
+pantry:['olivový olej','česnek','bílé víno (100 ml)','rybí nebo zeleninový vývar (700 ml)','máslo (15 g)','sůl','pepř'],
+steps:['Vývar ohřej v kastrůlku – vždy přilévej teplý vývar.','Krevety osuš a osolímes. Opékej na oleji 90 sekund z každé strany, odložíms.','Ve velkém kastrůlku osmahni cibuli a česnek na oleji 5 minut.','Přidej rýži, orestuj 2 minuty za stálého míchání.','Přilij víno, odpař za míchání 2 minuty.','Přilévej vývar po naběračkách za stálého míchání, vždy počkej až vsákne.','Po 15–18 minutách přidej hrášek.','Po 2 minutách odstavíms, vmíchej máslo a parmazán, přidej krevety.','Zakryj 2 minuty. Podávat ihned.']},
+{id:'f16',name:'Losos poke bowl',cat:'fi',time:'22 min',prot:'~46 g',
+ing:[{n:'losos filet (čerstvý)',q:300,u:'g',sc:'Ryby'},{n:'rýže jasmínová',q:160,u:'g',sc:'Přílohy'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'},{n:'mango nebo edamame',q:100,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['sójová omáčka','sezamový olej','med','zázvor (čerstvý)','sezamová semínka','jarní cibulka'],
+steps:['Rýži uvař dle návodu, nechej mírně vychladit – poke bowl se servíruje s vlažnou rýží.','Lososa nakrájej na kostičky 2×2 cm.','Marinada: 2 lžíce sójové omáčky + lžička sezamového oleje + lžička medu + trochu nastrouhaného zázvoru.','Lososa přidej do marinády, promíchej, marinovat 10 minut.','Avokádo nakrájej na plátky, okamžitě překapatý citronovou šťávou.','Okurku nakrájej na tenká kolečka nebo půlkolečka.','Bowl sestavit: rýže + avokádo + okurka + mango nebo edamame + losos s marinádou.','Posyp sezamem a jarní cibulkou nakrájenou šikmo.']},
+{id:'f17',name:'Pangasius pečený se zeleninou',cat:'fi',time:'35 min',prot:'~40 g',
+ing:[{n:'pangasius filet',q:400,u:'g',sc:'Ryby'},{n:'brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'cuketa',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','paprika uzená','petržel','citron','sůl','pepř'],
+steps:['Troubu předehřej na 200 °C.','Brambory nakrájej na tenké plátky nebo klínky, promíchej s olejem, solí, pepřem a paprikou.','Rozlož na plech, pečímes 15 minut.','Zeleninu nakrájej na kousky, přidej k bramborám, pečímes 10 minut.','Pangasius osolímes, opepřímes, přidej na plech.','Pečímes 12–15 minut – filet ztrácí průsvitnost a snadno se lamí vidličkou.','Přidat citronovou šťávu a posyp petrželí.']},
+{id:'f18',name:'Rybí vývar s kořenovou zeleninou',cat:'fi',time:'40 min',prot:'~34 g',
+ing:[{n:'treska nebo pangasius',q:400,u:'g',sc:'Ryby'},{n:'brambory',q:300,u:'g',sc:'Ovoce & zelenina'},{n:'mrkev',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'celer',q:100,u:'g',sc:'Ovoce & zelenina'},{n:'pórko',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','sůl','pepř','bobkový list','nové koření','čerstvá petržel'],
+steps:['V hrnci s 1,5 l vody přiveď k varu. Přidej bobkový list a nové koření.','Mrkev a celer nakrájej na kostičky, brambory na kostičky 1,5 cm.','Přidej zeleninu do vroucí vody, vař 10 minut.','Pórko nakrájej na kolečka, přidej, vař 3 minuty.','Rybí filety nakrájej na větší kusy, osolímes, přidej do polévky.','Vař na mírném ohni 8–10 minut.','Dochutímes solí a pepřem. Posyp čerstvou petrželí.','Polévka vydrží 3 dny v lednici.']},
+{id:'f19',name:'Tuňákový burger s guacamole',cat:'fi',time:'25 min',prot:'~46 g',
+ing:[{n:'tuňák v nálevu',q:2,u:'konzerva',sc:'Ryby'},{n:'celozrnná bulka',q:4,u:'ks',sc:'Přílohy'},{n:'vejce',q:2,u:'ks',sc:'Mléčné'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['strouhanka nebo ovesné vločky (3 lžíce)','česnek','sůl','pepř','olivový olej','citronová šťáva','salát nebo rukola'],
+steps:['Tuňák sceď velmi důkladně – přebytečná tekutina způsobuje rozpadání burgerů.','V míse smíchej tuňáka, vejce, strouhanku, prolisovaný česnek, sůl a pepř.','Tvaruj 4 placičky stejné tloušťky.','Na pánvi rozehřej 2 lžíce olivového oleje na středně silný plamen.','Burgery opékej 3–4 minuty z každé strany – neotáčej předčasně, musí se vytvořit kůrka.','Guacamole: avokádo rozmačkej vidličkou, přidej citronovou šťávu, sůl a pepř.','Bulky zahřej nasucho. Sestavit: bulka + guacamole + rukolou + burger + rajče.']},
+{id:'f20',name:'Krevetové tacos s coleslaw',cat:'fi',time:'22 min',prot:'~40 g',
+ing:[{n:'krevety (čištěné)',q:300,u:'g',sc:'Ryby'},{n:'kukuřičné nebo celozrnné tortilly',q:8,u:'ks',sc:'Přílohy'},{n:'zelné zelí (červené nebo bílé)',q:200,u:'g',sc:'Ovoce & zelenina'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'limetka',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','kumin','chilli','sůl','pepř','řecký jogurt (2 lžíce)','med (1 lžička)'],
+steps:['Coleslaw: zelí nakrájej najemno, smíchej s jogurtem, limetkovou šťávou a medem. Nechat 10 minut marinovat.','Krevety ochutímes kuminem, chilli, česnekem, solí.','Na silně rozehřáté pánvi opékej krevety 90 sekund z každé strany.','Guacamole: avokádo rozmačkej, přidej limetkovou šťávu, sůl, chilli.','Tortilly nahřej na suché pánvi 30 sekund z každé strany.','Sestavit: tortilla + guacamole + coleslaw + krevety.','Podávat okamžitě – krevety a tortilly se smí stát měkčí.']},
+// ══ ČERVENÉ MASO (8 receptů) ══
+{id:'r01',name:'Hovězí guláš s celozrnným chlebem',cat:'re',time:'90 min',prot:'~48 g',
+ing:[{n:'hovězí kližka nebo plec',q:400,u:'g',sc:'Drůbež'},{n:'cibule',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'celozrnný chléb',q:4,u:'plátky',sc:'Přílohy'},{n:'rajčatový protlak',q:60,u:'g',sc:'Přílohy'}],
+pantry:['olivový olej','česnek','paprika sladká a uzená','kmín celý','majoránka','sůl','pepř','hovězí vývar (400 ml)'],
+steps:['Hovězí nakrájej na kostičky 3×3 cm, osolímes, opepřímes.','Ve velkém kastrůlku rozehřej olej na silný plamen. Maso opékej po částech 2–3 minuty – neplňte pánev celou, maso by se dusilo místo opékání.','Maso odložíme, ve stejném kastrůlku orestuj nakrájenou cibuli 8 minut do zlatova.','Přidej prolisovaný česnek, papriku, kmín – orestuj 1 minutu.','Přidej protlak, orestuj 2 minuty.','Vrátímes maso, přilij vývar tak, aby maso bylo pokryté.','Přiveď k varu, stáhni na minimum, přikryj a dusíš 60–80 minut.','Maso musí být velmi měkké – rozpadající se.','Přidej majoránku, dochutímes. Vydrží 3–4 dny.']},
+{id:'r02',name:'Hovězí bolognese s těstovinami',cat:'re',time:'50 min',prot:'~50 g',
+ing:[{n:'hovězí mleté maso (10 % tuk)',q:400,u:'g',sc:'Drůbež'},{n:'celozrnné těstoviny',q:160,u:'g',sc:'Přílohy'},{n:'rajčata konzervovaná',q:400,u:'g',sc:'Přílohy'},{n:'mrkev',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','oregán','bazalka','červené víno (100 ml)','sůl','pepř','parmazán','celer (1 stonek)'],
+steps:['Cibuli, mrkev a celer nakrájej najemno. Orestuj na oleji 8–10 minut do zlatova.','Přidej česnek, orestuj 1 minutu.','Přidej mleté hovězí, rozbíjej lžičkou na drobné kousky. Opékej 7–8 minut na středním ohni.','Přilij červené víno, odpař na polovinu za míchání – 4 minuty.','Přidej rajčata, rozbij na kousky. Přidej oregán a bazalku.','Vař na mírném ohni 25 minut bez pokličky – omáčka zhoustne.','Těstoviny uvař al dente, scedímes.','Servírovat s parmazánem.']},
+{id:'r03',name:'Hovězí burger s celozrnnou bulkou',cat:'re',time:'25 min',prot:'~52 g',
+ing:[{n:'hovězí mleté maso (10–15 % tuk)',q:400,u:'g',sc:'Drůbež'},{n:'celozrnná bulka',q:4,u:'ks',sc:'Přílohy'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'ledový salát',q:80,u:'g',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['sůl','pepř','worcester (1 lžička)','olivový olej','hořčice','ketchup'],
+steps:['Mleté hovězí smíchej s worcestrem, solí a pepřem – nemíchej příliš, burger bude tuhý.','Tvaruj 4 placičky o hmotnosti cca 100 g. Uprostřed každé udělej prohlubeň.','Pánev rozehřej na silný plamen s lžící oleje.','Burgery opékej 3 minuty z každé strany pro medium – nepřitlačuj!','Pro well-done: 4–5 minut z každé strany. Vnitřní teplota 71 °C.','Nechej 3 minuty odpočinout – šťáva se ustálí.','Bulky zahřej nasucho. Sestavit s hořčicí, salátem, rajčetem, cibulí.']},
+{id:'r04',name:'Vepřová panenka s batáty a chřestem',cat:'re',time:'45 min',prot:'~48 g',
+ing:[{n:'vepřová panenka',q:400,u:'g',sc:'Drůbež'},{n:'sladké brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'chřest',q:200,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','rozmarýn','tymján','dijonská hořčice (1 lžíce)','sůl','pepř'],
+steps:['Troubu předehřej na 200 °C. Batáty ouloupej, nakrájej na kostičky.','Vepřovou panenku potři hořčicí ze všech stran, pak osolímes, opepřímes.','Přidej prolisovaný česnek, rozmarýn a tymján – zatlačíme do masa.','Batáty s olejem, solí a pepřem rozlož na plech.','Pečeme batáty 15 minut. Pak přidej vepřovou panenku.','Pečemes dalších 25–28 minut. Vnitřní teplota 65 °C – mírně růžová uvnitř.','Chřest přidej na posledních 10 minut.','Nechej panenku 5 minut odpočinout, pak nakrájej na medailony.']},
+{id:'r05',name:'Hovězí steak se salátem a bramborami',cat:'re',time:'30 min',prot:'~54 g',
+ing:[{n:'hovězí roštěnec nebo svíčková',q:400,u:'g',sc:'Drůbež'},{n:'brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'rukola',q:80,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','sůl (hrubá)','pepř (čerstvě mletý)','česnek','máslo (10 g)','rozmarýn'],
+steps:['Steak vyjmi z lednice 30 minut předem – temperování je klíčové pro rovnoměrné propečení.','Brambory nakrájej na plátky, vař v osolené vodě 18 minut nebo pečímes v troubě 25 min.','Steak osuš papírovým ubrouskem, hrubě osolíms ze obou stran.','Grilovací pánev rozehřej na maximum – musí kouřit.','Steak přilož na pánev – 2–3 minuty z každé strany pro medium rare.','Poslední minutu přidej máslo, rozmarýn a stroužek česneku, přelévej steak.','Nechej odpočinout 5 MINUT – šťáva se ustálí. Nekrájej dříve.','Nakrájej přes vlákno. Servírovat s rukolou, rajčaty a bramborami.']},
+{id:'r06',name:'Lamb kofta s tabulé a jogurtem',cat:'re',time:'30 min',prot:'~44 g',
+ing:[{n:'jehněčí nebo hovězí mleté maso',q:400,u:'g',sc:'Drůbež'},{n:'bulgur',q:150,u:'g',sc:'Přílohy'},{n:'řecký jogurt',q:150,u:'g',sc:'Mléčné'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['česnek','kumin','koriandr','skořice','sůl','pepř','čerstvá petržel a máta','olivový olej'],
+steps:['Bulgur zalij vroucí osolenou vodou (1:1.5), přikryj a nechej 15–20 min. Rozhrabej vidličkou.','Mleté maso smíchej s prolisovaným česnekem, kuminem, koriandrem, skořicí, solí a pepřem.','Mokrýma rukama tvaruj koftu na špejle – podlouhlé válečky.','Opékej na grilovací pánvi 4 minuty z každé strany.','Tabulé: bulgur + nakrájené rajče + petržel + máta + olivový olej + citronová šťáva.','Jogurtová omáčka: jogurt + prolisovaný česnek + trocha citronové šťávy + sůl.','Servírovat koftu na tabulé s jogurtovou omáčkou.']},
+{id:'r07',name:'Vepřová kotleta s dušenou zeleninou',cat:'re',time:'30 min',prot:'~46 g',
+ing:[{n:'vepřová kotleta (bez kosti)',q:400,u:'g',sc:'Drůbež'},{n:'brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'zelené fazolky',q:200,u:'g',sc:'Ovoce & zelenina'},{n:'mrkev',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','hořčice','tymján','sůl','pepř','máslo (10 g)'],
+steps:['Brambory nakrájej na čtvrtky, uvař v osolené vodě 18–20 minut.','Kotlety osolímes, opepřímes, potřít trochou hořčice.','Na pánvi rozehřej olej na střední plamen.','Kotlety opékej 4–5 minut z každé strany.','Přidej máslo, česnek a tymján – přelévej kotlety 1 minutu.','Nechej 3 minuty odpočinout.','Fazolky a mrkev nakrájej, dusit ve větší pánvi s vodou a máslem 8 minut.','Servírovat s bramborami.']},
+{id:'r08',name:'Hovězí pho (vietnamská polévka)',cat:'re',time:'50 min',prot:'~44 g',
+ing:[{n:'hovězí maso (roštěnec nebo svíčková na plátky)',q:400,u:'g',sc:'Drůbež'},{n:'rýžové nudle',q:160,u:'g',sc:'Přílohy'},{n:'jarní cibulka',q:4,u:'ks',sc:'Ovoce & zelenina'},{n:'klíčky mungo',q:100,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['hovězí vývar (1 litr)','sójová omáčka','zázvor','hvězdičkový anýz','skořice','rybí omáčka','čerstvý koriandr','limetka','chilli'],
+steps:['Vývar ohřej s plátky zázvoru, hvězdičkovým anýzem a skořicí – vař 15 minut pro extrakci chutí.','Vývar přeceď přes sítko, dochutímes rybí omáčkou a sójovou omáčkou.','Rýžové nudle nech namáčet v horké vodě 8–10 minut dle návodu, scedímes.','Hovězí maso nakrájej na ultra tenké plátky přes vlákno – tence jako papír.','Do misky polož nudle, přilij vroucí vývar – plátky hovězího vhoď přímo do vývarů, uvaří se za 30–60 sekund.','Přidej klíčky mungo, jarní cibulku, koriandr, plátky chilli a squeeze limetky.']},
+
+// ══ NOVÉ RECEPTY – fitness inspirace ══
+{id:'sn21',name:'Proteinové palačinky',cat:'sn',time:'15 min',prot:'~36 g',
+ing:[{n:'ovesné vločky (jemné)',q:100,u:'g',sc:'Přílohy'},{n:'vejce',q:4,u:'ks',sc:'Mléčné'},{n:'tvaroh hladký',q:150,u:'g',sc:'Mléčné'},{n:'banán',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['skořice','vanilka','kokosový olej nebo máslo'],
+steps:['Všechny ingredience vlož do mixéru: ovesné vločky, vejce, tvaroh, banán, skořici a vanilku.','Mixuj 30 sekund do hladkého těsta. Nechej 3 minuty odpočinout – těsto mírně zhoustne.','Na pánvi rozehřej lžičku kokosového oleje nebo másla na středně slabý plamen.','Nalij naběračkou malou placičku (průměr cca 10 cm). Pečíme 2 minuty – až se okraje zpevní a na povrchu se tvoří bubliny.','Otočíme a pečímes další 1,5 minuty. Opakovíme se zbytkem těsta.','Podávat s řeckým jogurtem a čerstvým ovocem. Nebo zabalit do boxu na cestu.']},
+{id:'sn22',name:'Proteinová ovesná kaše s ovocem',cat:'sn',time:'8 min',prot:'~30 g',
+ing:[{n:'ovesné vločky',q:80,u:'g',sc:'Přílohy'},{n:'proteinový prášek',q:30,u:'g',sc:'Doplňky'},{n:'banán',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'mandle nebo vlašské ořechy',q:20,u:'g',sc:'Doplňky'}],
+pantry:['mléko (250 ml)','med','skořice','vanilka'],
+steps:['V kastrůlku smíchej ovesné vločky s 250 ml mléka (nebo 50/50 mléko + voda).','Na středním ohni za stálého míchání vař 4–5 minut, dokud kaše nezíská krémovou konzistenci.','Odstavíme z tepla a nechej minutu trochu zchladit – to je klíčové, proteinový prášek při příliš vysoké teplotě shlukuje.','Vmíchej 30 g proteinového prášku, skořici a vanilku. Důkladně promíchej.','Přidej med podle chuti.','Servírovat s plátky banánu a ořechy. Do boxu nalijeme do termosky nebo uzavíratelné nádoby.']},
+{id:'sn23',name:'Francouzské proteinové toasty',cat:'sn',time:'12 min',prot:'~28 g',
+ing:[{n:'celozrnný chléb',q:4,u:'plátky',sc:'Přílohy'},{n:'vejce',q:3,u:'ks',sc:'Mléčné'},{n:'řecký jogurt',q:100,u:'g',sc:'Mléčné'},{n:'čerstvé ovoce (borůvky, jahody)',q:150,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['mléko (3 lžíce)','skořice','vanilka','kokosový olej','med'],
+steps:['V misce rozšlehej 3 vejce se 3 lžícemi mléka, skořicí a vanilkou.','Řecký jogurt smíchej s lžičkou medu – bude sloužit jako dip nebo nátěrka.','Plátky chleba namáčej v vaječné směsi 20–30 sekund z každé strany – musí dobře vsáknout.','Na pánvi rozehřej lžičku kokosového oleje na středně slabý plamen.','Toasty opékej 2–3 minuty z každé strany do zlatova.','Servírovat s lžící jogurtu a čerstvým ovocem. Výborné i za studena – ideální do boxu.']},
+{id:'p16',name:'Kuřecí prsa s čočkovým salátem',cat:'po',time:'28 min',prot:'~46 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'zelená čočka (suchá)',q:150,u:'g',sc:'Přílohy'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'},{n:'baby špenát',q:80,u:'g',sc:'Ovoce & zelenina'},{n:'citron',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','dijonská hořčice','sůl','pepř','bobkový list'],
+steps:['Čočku proplachni, vař ve vodě s bobkovým listem 20–22 minut do al dente (nesmí se rozvařit). Scedímes, odstraň bobkový list.','Zálivka: 3 lžíce olivového oleje + lžíce citronové šťávy + lžička dijonské hořčice + prolisovaný česnek + sůl + pepř – intenzivně emulguj vidličkou.','Kuřecí prsa osolímes, opépřímes, opékej na oleji 5 minut z každé strany.','Nechej 4 minuty odpočinout, nakrájej na plátky diagonálně.','Salát: vlažnou čočku smíchej se zálivkou, přidej špenát a cherry rajčata.','Servírovat kuřecí plátky na čočkovém salátu. Vydrží 2 dny.']},
+{id:'p17',name:'Kuřecí souvlaki s tzatziki',cat:'po',time:'25 min',prot:'~44 g',
+ing:[{n:'kuřecí prsa',q:350,u:'g',sc:'Drůbež'},{n:'celozrnný pita chléb',q:4,u:'ks',sc:'Přílohy'},{n:'řecký jogurt',q:200,u:'g',sc:'Mléčné'},{n:'okurka',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','citron','oregán','kumin','sůl','pepř','čerstvá máta'],
+steps:['Kuřecí prsa nakrájej na kostičky 3×3 cm, napíchat na dřevěné špejle (namočené 20 minut ve vodě).','Marinada: olivový olej + citronová šťáva + oregán + kumin + česnek + sůl + pepř. Kuřecí marinuj 15 minut.','Tzatziki: okurku nastruhej, intenzivně vymaň v ručníku, smíchej s jogurtem, prolisovaným česnekem, mátou, citronovou šťávou a solí.','Souvlaki griluj na grilovací pánvi nebo griluj 4 minuty z každé strany.','Pita nahřej na pánvi 1 minutu. Plnit tzatziki, souvlaki, rajčetem a paprikou.']},
+{id:'p18',name:'Kuřecí a zeleninová zapečená quesadilla',cat:'po',time:'20 min',prot:'~40 g',
+ing:[{n:'kuřecí prsa (předem uvařená)',q:250,u:'g',sc:'Drůbež'},{n:'celozrnná tortilla',q:4,u:'ks',sc:'Přílohy'},{n:'nízkokalorický tvrdý sýr',q:80,u:'g',sc:'Mléčné'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'červené fazole (konzerva)',q:0.5,u:'konzerva',sc:'Přílohy'}],
+pantry:['sůl','pepř','kumin','paprika','česnek','olivový olej'],
+steps:['Kuřecí prsa nakrájej na malé kousky nebo roztrhej na vlákna.','Smíchej s kuminem, paprikou, solí, pepřem a prolisovaným česnekem.','Papriku nakrájej na proužky, fazole sceď a proplachni.','Na tortillu rozlož kuřecí, papriku, fazole a nastrouhaný sýr.','Přikrý druhou tortillou.','Na suché pánvi opékej 2–3 minuty z každé strany, dokud sýr nezačne tavit a tortilla nezezlátne.','Nakrájej na čtvrtky jako pizzu. Výborná i studená.']},
+{id:'p19',name:'Kuřecí prsa v jogurtové marinádě s rýžovým salátem',cat:'po',time:'35 min',prot:'~48 g',
+ing:[{n:'kuřecí prsa',q:300,u:'g',sc:'Drůbež'},{n:'řecký jogurt',q:100,u:'g',sc:'Mléčné'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'okurka',q:0.5,u:'ks',sc:'Ovoce & zelenina'},{n:'rajče',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['česnek','kurkuma','paprika','kumin','olivový olej','citronová šťáva','sůl','pepř','čerstvá máta nebo petržel'],
+steps:['Jogurtová marinada: jogurt + prolisovaný česnek + kurkuma + paprika + kumin + sůl + pepř + lžíce olivového oleje.','Kuřecí prsa vlož do marinády, obal ze všech stran. Marinuj min. 15 minut (nebo přes noc v lednici).','Rýži uvař dle návodu. Rýžový salát: vlažnou rýži smíchej s nakrájenou okurkou, rajčetem, citronovou šťávou, olejem a bylinkami.','Pánev rozehřej na střední plamen s trochou oleje.','Kuřecí opékej 5–6 minut z každé strany, dokud marinada nezkaramelizuje a maso je propečené.','Nechej 4 minuty odpočinout, nakrájej na plátky. Rozdělit do boxů na 2 dny.']},
+{id:'f21',name:'Losos s kokosovým kari',cat:'fi',time:'28 min',prot:'~44 g',
+ing:[{n:'losos filet',q:300,u:'g',sc:'Ryby'},{n:'rýže jasmínová',q:160,u:'g',sc:'Přílohy'},{n:'kokosové mléko',q:200,u:'ml',sc:'Přílohy'},{n:'baby špenát',q:100,u:'g',sc:'Ovoce & zelenina'},{n:'cherry rajčata',q:150,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','zázvor','červená kari pasta (1 lžíce)','citronová šťáva','sůl','pepř','koriandr'],
+steps:['Rýži uvař dle návodu.','V hluboké pánvi rozehřej olej, přidej prolisovaný česnek a nastrouhaný zázvor – 30 sekund.','Přidej kari pastu, orestuj 1 minutu za míchání – pasta musí vonet.','Přilij kokosové mléko, zamíchej, přiveď k varu.','Lososa osolímes, nakrájej na velké kostičky, přidej do omáčky.','Vař na mírném ohni 8 minut, přidej rajčata a špenát.','Wiltnout 2 minuty, přidej citronovou šťávu. Posyp koriandrem.','Podávat s rýží.']},
+{id:'f22',name:'Pečený losos s pikantní glazurou',cat:'fi',time:'22 min',prot:'~44 g',
+ing:[{n:'losos filet',q:300,u:'g',sc:'Ryby'},{n:'quinoa',q:150,u:'g',sc:'Přílohy'},{n:'brokolice',q:300,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['med','sójová omáčka','česnek','chilli vločky','zázvor','sezamový olej','olivový olej','sůl','pepř'],
+steps:['Troubu předehřej na 220 °C – vysoká teplota je klíčová pro glazuru.','Glazura: 2 lžíce medu + 2 lžíce sójové omáčky + prolisovaný česnek + chilli vločky + lžička zázvoru + lžička sezamového oleje.','Quinoa: proplachni, uvař v 300 ml osolené vody 15 minut, přikrytá 5 min.','Lososa osolímes, polož na plech vyložený pečicím papírem.','Přelij 2/3 glazury navrch lososa.','Pečímes 10–12 minut. Poslední 2 minuty zapni horní gril – glazura zkaramelizuje.','Brokolici orestuj na oleji 4 minuty. Zbytek glazury přelit navrch.']},
+{id:'f23',name:'Tuňákové zeleninové rolky',cat:'fi',time:'12 min',prot:'~36 g',
+ing:[{n:'tuňák v nálevu',q:2,u:'konzerva',sc:'Ryby'},{n:'celozrnná tortilla',q:4,u:'ks',sc:'Přílohy'},{n:'avokádo',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'paprika',q:1,u:'ks',sc:'Ovoce & zelenina'},{n:'baby špenát',q:60,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['citronová šťáva','sůl','pepř','chilli vločky','česnek (granulovaný)'],
+steps:['Tuňák sceď velmi důkladně.','Avokádo rozmačkej vidličkou, smíchej s citronovou šťávou, solí a granulovaným česnekem.','Papriku nakrájej na tenké proužky.','Na tortillu rozetři avokádo na celou plochu (ponech 2 cm okraj).','Rozlož baby špenát, pak tuňáka, pak proužky papriky.','Posyp chilli vločkami a kapkou citronové šťávy.','Zaroluj pevně, rozřízni šikmo napůl.','Zabalit do potravinářské fólie nebo pergamenu.']},
+{id:'f24',name:'Krevety na kari s kokosovým mlékem',cat:'fi',time:'22 min',prot:'~38 g',
+ing:[{n:'krevety (syrové, čištěné)',q:300,u:'g',sc:'Ryby'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'kokosové mléko',q:150,u:'ml',sc:'Přílohy'},{n:'paprika',q:2,u:'ks',sc:'Ovoce & zelenina'},{n:'cibule',q:1,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['olivový olej','česnek','zázvor','žluté kari koření','kurkuma','sůl','pepř','čerstvý koriandr','limetka'],
+steps:['Rýži uvař dle návodu.','Cibuli nakrájej na proužky, orestuj na oleji 4 minuty do měkka.','Přidej česnek a nastrouhaný zázvor, orestuj 30 sekund.','Přidej kari koření a kurkumu, orestuj 30 sekund – koření musí vonet.','Přidej nakrájenou papriku, restuj 2 minuty.','Přilij kokosové mléko, přiveď k varu.','Přidej krevety, vař 3–4 minuty. Krevety jsou hotové, jakmile jsou zcela růžové.','Přidej limetkovou šťávu, posyp koriandrem. Podávat s rýží.']},
+{id:'t11',name:'Krůtí prsa v hořčičné krustě s bramborami',cat:'po',time:'45 min',prot:'~46 g',
+ing:[{n:'krůtí prsa',q:400,u:'g',sc:'Drůbež'},{n:'brambory',q:400,u:'g',sc:'Ovoce & zelenina'},{n:'zelené fazolky',q:200,u:'g',sc:'Ovoce & zelenina'}],
+pantry:['dijonská hořčice (2 lžíce)','strouhanky z celozrnného chleba (3 lžíce)','česnek','tymján','olivový olej','sůl','pepř'],
+steps:['Troubu předehřej na 200 °C.','Brambory nakrájej na klínky, smíchej s olejem, solí, pepřem a tymiánem. Rozlož na plech, pečímes 15 minut.','Krůtí prsa osolímes ze všech stran.','Smíchej hořčici s prolisovaným česnekem – potřít krůtí prsa ze všech stran.','Navrch přitlač strouhanku – přilne k hořčici a vytvoří krustu.','Krůtí přidej na plech k bramborám, pečímes 28–32 minut.','Fazolky blanšíruj 4 minuty ve slané vodě, pak zchladit v ledové vodě.','Servírovat vše dohromady. Kůrka musí být zlatavá a křupavá.']},
+{id:'t12',name:'Krůtí mleté kuličky v rajčatové omáčce se špenátem',cat:'po',time:'35 min',prot:'~44 g',
+ing:[{n:'krůtí mleté maso',q:400,u:'g',sc:'Drůbež'},{n:'celozrnné těstoviny',q:160,u:'g',sc:'Přílohy'},{n:'rajčata konzervovaná',q:400,u:'g',sc:'Přílohy'},{n:'baby špenát',q:100,u:'g',sc:'Ovoce & zelenina'},{n:'vejce',q:1,u:'ks',sc:'Mléčné'}],
+pantry:['olivový olej','česnek','oregán','bazalka','sůl','pepř','parmazán','strouhanka (2 lžíce)'],
+steps:['Mleté krůtí smíchej s vejcem, strouhankou, prolisovaným česnekem, solí, pepřem. Tvaruj kuličky velikosti vlašského ořechu.','Na oleji opékej kuličky ze všech stran 4–5 minut do zlatova. Odložímes.','Na stejné pánvi osmahni prolisovaný česnek 30 sekund.','Přidej rajčata, oregán, bazalku. Vař 8 minut.','Přidej kuličky a špenát, vař 5 minut.','Těstoviny uvař al dente. Servírovat s parmazánem.']},
+{id:'r09',name:'Vepřové rendang s rýží',cat:'re',time:'70 min',prot:'~46 g',
+ing:[{n:'vepřová plec nebo krkovice',q:400,u:'g',sc:'Drůbež'},{n:'rýže',q:160,u:'g',sc:'Přílohy'},{n:'kokosové mléko',q:200,u:'ml',sc:'Přílohy'},{n:'cibule',q:2,u:'ks',sc:'Ovoce & zelenina'}],
+pantry:['česnek','zázvor','citronová tráva','kurkuma','chilli','galangl nebo zázvoru více','koriander','kumin','sůl'],
+steps:['Rendang pastu: rozmixuj cibuli, česnek, zázvor, chilli, citronovou trávu, kurkumu a koření na hladkou pastu.','Maso nakrájej na kostičky 3 cm, osolímes.','V hrnci orestuj pastu na oleji 5 minut za stálého míchání.','Přidej maso, opékej 5 minut.','Přilij kokosové mléko, přiveď k varu, stáhni na minimum.','Vař bez pokličky 45–55 minut, míchej každých 10 minut – omáčka se bude odpařovat a karamelizovat.','Rendang je hotový, když omáčka úplně absorbuje a maso se pečíme na vlastním tuku.','Rýži uvař zvlášť.']},
+];
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const DAYS = ['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'];
+const CAT_TAG  = {sn:'tag-sn',po:'tag-po',fi:'tag-fi',re:'tag-re'};
+const CAT_LBL  = {sn:'Snídaně',po:'Drůbež',fi:'Ryby & mořské plody',re:'Červené maso'};
+const CAT_ICO  = {sn:'🌅',po:'🍗',fi:'🐟',re:'🥩'};
+const SHOP_ORDER = ['Drůbež','Ryby','Mléčné','Ovoce & zelenina','Přílohy','Doplňky'];
+const SHOP_ICONS = {Drůbež:'🍗',Ryby:'🐟',Mléčné:'🥛','Ovoce & zelenina':'🥦',Přílohy:'🌾',Doplňky:'💊'};
+const LIGHT_DINNERS = [
+  'Řecký jogurt s ovocem a granolou',
+  'Tvaroh s ovocem a chia semínky',
+  'Cottage cheese s chlebem a zeleninou',
+  'Skyr s ovocem a mandlemi',
+  'Tuňák z konzervy s celozrnným chlebem',
+  'Proteinový pudink z tvarohu',
+  'Kefír s proteinem a ovsem',
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let CUSTOM_MEALS = [];
+let CHECKED_ITEMS = {};
+let PLAN = null;
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  SDÍLENÁ KONFIGURACE – vyplň jednou a nahraj na Netlify               ║
+// ║  1. Jdi do záložky ⚙️ Nastavení → vytvoř Bin → zkopíruj API klíč     ║
+// ║     a Bin ID → klikni "Uložit a připojit"                             ║
+// ║  2. Vyplň apiKey a binId níže → ulož soubor → nahraj na Netlify       ║
+// ║  Pak každý návštěvník webu automaticky vidí sdílená data.             ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+const DEFAULT_CFG = {
+  apiKey: '$2a$10$XY4yIk0q5CokbrKCEAVnrucirwa8Kp87eaa/DI.1uh4fgGiO2iQEu',
+  binId:  '69b84eeec3097a1dd52ebea9'
+};
+let CFG = {apiKey:'',binId:''};
+let lastSync = null;
+let syncTimer = null;
+let swapCtx = null;    // {dayIdx, slot, currentName}
+let swapFilt = 'all';
+let dbFilter = 'all';
+let afIngCount = 0, afStepCount = 0;
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
+function rq(q,u){if(u==='g'||u==='ml'){if(q<100)return Math.round(q/10)*10||10;if(q<500)return Math.round(q/50)*50;return Math.round(q/100)*100;}return q%1===0?q:parseFloat(q.toFixed(1));}
+function getAllMeals(){return[...DB,...CUSTOM_MEALS];}
+
+function showToast(msg,ms=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),ms);
+}
+
+// ─── PERSIST ─────────────────────────────────────────────────────────────────
+function saveLocal(){
+  try{localStorage.setItem('fp_plan',JSON.stringify(PLAN));}catch(e){}
+  try{localStorage.setItem('fp_custom',JSON.stringify(CUSTOM_MEALS));}catch(e){}
+  try{localStorage.setItem('fp_checked',JSON.stringify(CHECKED_ITEMS));}catch(e){}
+  try{localStorage.setItem('fp_cfg',JSON.stringify(CFG));}catch(e){}
+}
+function loadLocal(){
+  try{const v=localStorage.getItem('fp_plan');if(v)PLAN=JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('fp_custom');if(v)CUSTOM_MEALS=JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('fp_checked');if(v)CHECKED_ITEMS=JSON.parse(v);}catch(e){}
+  // Načti uložená nastavení z localStorage
+  try{const v=localStorage.getItem('fp_cfg');if(v)CFG={...CFG,...JSON.parse(v)};}catch(e){}
+  // Pokud uživatel nemá vlastní nastavení, použij výchozí sdílenou konfiguraci
+  if(!CFG.apiKey && DEFAULT_CFG.apiKey) CFG = {...DEFAULT_CFG};
+}
+
+// ─── JSONBIN SYNC ────────────────────────────────────────────────────────────
+const JB='https://api.jsonbin.io/v3';
+
+function schedulePush(){
+  if(!CFG.apiKey||!CFG.binId)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>doPush(true),1500);
+}
+
+async function doPush(silent){
+  if(!CFG.apiKey||!CFG.binId)return false;
+  try{
+    const res=await fetch(JB+'/b/'+CFG.binId,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':CFG.apiKey},
+      body:JSON.stringify({v:1,plan:PLAN,custom:CUSTOM_MEALS,checked:CHECKED_ITEMS,ts:new Date().toISOString()})
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    lastSync=new Date();
+    updateSyncUI();
+    if(!silent)showToast('☁️ Uloženo do cloudu');
+    return true;
+  }catch(e){
+    if(!silent)showToast('⚠️ Nahrání selhalo: '+e.message);
+    return false;
+  }
+}
+
+async function doPull(silent){
+  if(!CFG.apiKey||!CFG.binId)return false;
+  try{
+    const res=await fetch(JB+'/b/'+CFG.binId+'/latest',{headers:{'X-Master-Key':CFG.apiKey}});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const r=data.record||{};
+    if(r.plan)PLAN=r.plan;
+    if(Array.isArray(r.custom))CUSTOM_MEALS=r.custom;
+    if(r.checked)CHECKED_ITEMS=r.checked;
+    saveLocal();
+    lastSync=new Date();
+    updateSyncUI();
+    if(!silent)showToast('☁️ Data stažena');
+    return true;
+  }catch(e){
+    if(!silent)showToast('⚠️ Stahování selhalo: '+e.message);
+    return false;
+  }
+}
+
+async function syncNow(){
+  showToast('🔄 Synchronizuji…');
+  await doPull(true);
+  if(PLAN){unlockPlanTabs();renderPlan();renderShop();renderMealList();}
+  updateSyncUI();
+  showToast('✓ Synchronizace dokončena');
+}
+
+// ─── SETTINGS PAGE ───────────────────────────────────────────────────────────
+function toggleVis(id,btn){
+  const el=document.getElementById(id);
+  el.type=el.type==='password'?'text':'password';
+  btn.textContent=el.type==='password'?'👁':'🙈';
+}
+
+async function createBin(){
+  const key=document.getElementById('cfg-key').value.trim();
+  if(!key){showStatus('⚠️ Nejprve zadej API klíč','err');return;}
+  const btn=document.getElementById('btn-create-bin');
+  btn.textContent='Vytvářím…';btn.disabled=true;
+  try{
+    const res=await fetch(JB+'/b',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'FitPlan','X-Bin-Private':'false'},
+      body:JSON.stringify({v:1,plan:null,custom:[],checked:{},ts:new Date().toISOString()})
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const id=data.metadata?.id;
+    if(!id)throw new Error('Bin ID nenalezeno');
+    document.getElementById('cfg-bin').value=id;
+    showStatus('✓ Bin vytvořen! ID: '+id+'\nNyní klikni „Uložit a připojit".','ok');
+  }catch(e){
+    showStatus('Chyba: '+e.message,'err');
+  }finally{
+    btn.textContent='Vytvořit nový Bin ☁️';btn.disabled=false;
+  }
+}
+
+async function saveSettings(){
+  const key=document.getElementById('cfg-key').value.trim();
+  const bin=document.getElementById('cfg-bin').value.trim();
+  if(!key||!bin){showStatus('⚠️ Vyplň API klíč i Bin ID','err');return;}
+  CFG={apiKey:key,binId:bin};
+  saveLocal();
+  showStatus('Ukládám… testuji připojení…','info');
+  const ok=await doPull(true);
+  if(ok){
+    showStatus('✓ Připojení úspěšné! Cloud sync aktivní.','ok');
+    if(PLAN){unlockPlanTabs();renderPlan();renderShop();renderMealList();}
+  }else{
+    showStatus('⚠️ Připojení selhalo. Zkontroluj API klíč a Bin ID.','err');
+  }
+  updateSyncUI();
+}
+
+function showStatus(msg,type){
+  const el=document.getElementById('s-status');
+  el.textContent=msg;el.className='s-status '+type;el.style.display='block';
+}
+
+function updateSyncUI(){
+  document.getElementById('sync-bin').textContent=CFG.binId?CFG.binId.slice(0,10)+'…':'—';
+  const st=document.getElementById('sync-status');
+  st.innerHTML=CFG.binId?'<span class="sync-ok">✓ Připojeno</span>':'<span style="color:var(--mt)">Nepřipojeno</span>';
+  document.getElementById('sync-time').textContent=lastSync?lastSync.toLocaleTimeString('cs-CZ'):'—';
+  if(document.getElementById('cfg-key'))document.getElementById('cfg-key').value=CFG.apiKey||'';
+  if(document.getElementById('cfg-bin'))document.getElementById('cfg-bin').value=CFG.binId||'';
+  // Zobraz banner pokud DEFAULT_CFG je zapékán
+  const banner=document.getElementById('default-cfg-banner');
+  if(banner)banner.style.display=(DEFAULT_CFG.apiKey&&DEFAULT_CFG.binId)?'block':'none';
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function goTo(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  if(pg)pg.classList.add('active');
+  const tabs=['db','gen','plan','shop','settings'];
+  const idx=tabs.indexOf(id);
+  if(idx>=0)document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if(id==='settings')updateSyncUI();
+}
+
+// ─── DB PAGE ─────────────────────────────────────────────────────────────────
+function setFilter(f,btn){
+  dbFilter=f;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  renderMealList();
+}
+
+function renderMealList(){
+  const all=getAllMeals();
+  const filt=all.filter(m=>dbFilter==='all'?true:m.cat===dbFilter);
+  document.getElementById('meal-list').innerHTML=filt.map(m=>`
+    <div class="meal-card">
+      <button class="meal-header" onclick="toggleMeal('mbody-${m.id}','mchev-${m.id}')">
+        <span class="meal-name">${esc(m.name)}${m.isCustom?'<span class="custom-badge">Vlastní</span>':''}</span>
+        <span class="tag ${CAT_TAG[m.cat]}" style="flex-shrink:0">${CAT_ICO[m.cat]} ${CAT_LBL[m.cat]}</span>
+        <span class="prot-badge">💪 ${esc(m.prot)}</span>
+        <span class="meal-time-txt">⏱ ${esc(m.time)}</span>
+        <span class="meal-chev" id="mchev-${m.id}">▾</span>
+      </button>
+      <div class="meal-body" id="mbody-${m.id}">
+        <div class="meal-body-title">Suroviny (pro 2 os. / 1 vaření)</div>
+        <div class="ing-list">${m.ing.map(i=>`${i.n} – ${i.q} ${i.u}`).join('\n')}</div>
+        ${m.pantry&&m.pantry.length?`<div class="pantry-txt">🏠 Předpokládáme doma: ${esc(m.pantry.join(', '))}</div>`:''}
+        <div class="meal-body-title" style="margin-top:14px">Postup krok za krokem</div>
+        <div class="steps-list">${m.steps.map((s,i)=>`<div class="step-item"><span class="step-num">${i+1}</span><span class="step-text">${esc(s)}</span></div>`).join('')}</div>
+        ${m.isCustom?`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd);text-align:right"><button onclick="deleteCustomMeal('${m.id}')" style="padding:7px 16px;border:1.5px solid var(--re);border-radius:8px;background:none;color:var(--re);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;">🗑 Smazat</button></div>`:''}
+      </div>
+    </div>`).join('');
+  const total=all.length,cust=CUSTOM_MEALS.length;
+  document.getElementById('db-sub').textContent=`Zobrazeno ${filt.length} z ${total} receptů${cust?` (včetně ${cust} vlastních)`:''}`;
+  document.getElementById('db-count').textContent=total;
+  document.getElementById('db-stats').innerHTML=`
+    <div class="stat-item">🌅 Snídaně: <strong>${all.filter(m=>m.cat==='sn').length}</strong></div>
+    <div class="stat-item">🍗 Drůbež: <strong>${all.filter(m=>m.cat==='po').length}</strong></div>
+    <div class="stat-item">🐟 Ryby: <strong>${all.filter(m=>m.cat==='fi').length}</strong></div>
+    <div class="stat-item">🥩 Červené maso: <strong>${all.filter(m=>m.cat==='re').length}</strong></div>
+    <div class="stat-item">Celkem: <strong>${total}</strong></div>`;
+}
+
+function toggleMeal(bodyId,chevId){
+  const body=document.getElementById(bodyId),chev=document.getElementById(chevId);
+  if(!body)return;
+  const was=body.classList.contains('open');
+  document.querySelectorAll('.meal-body.open').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.meal-chev.open').forEach(c=>c.classList.remove('open'));
+  if(!was){body.classList.add('open');chev.classList.add('open');}
+}
+
+// ─── ADD FORM ────────────────────────────────────────────────────────────────
+function openAddForm(){
+  const w=document.getElementById('add-form-wrap');
+  w.classList.add('open');
+  w.scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('btn-open-form').style.display='none';
+  if(!document.getElementById('af-ing-list').children.length){addIngRow();addIngRow();}
+  if(!document.getElementById('af-steps-list').children.length){addStepRow();addStepRow();}
+}
+function closeAddForm(){
+  document.getElementById('add-form-wrap').classList.remove('open');
+  document.getElementById('btn-open-form').style.display='';
+}
+function resetAddForm(){
+  ['af-name','af-time','af-prot'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('af-cat').value='po';
+  document.getElementById('af-ing-list').innerHTML='';
+  document.getElementById('af-steps-list').innerHTML='';
+  afIngCount=0;afStepCount=0;
+  addIngRow();addIngRow();addStepRow();addStepRow();
+}
+function addIngRow(){
+  const id=afIngCount++;
+  const row=document.createElement('div');
+  row.className='af-ing-row';row.id='af-ir-'+id;
+  row.innerHTML=`<input class="af-inp" type="text" placeholder="Ingredience" id="af-in-${id}">
+    <input class="af-inp" type="text" placeholder="Množství" id="af-iq-${id}" inputmode="decimal">
+    <input class="af-inp" type="text" placeholder="Jednotka" id="af-iu-${id}" style="text-align:center">
+    <button class="af-del" onclick="document.getElementById('af-ir-${id}').remove()">×</button>`;
+  document.getElementById('af-ing-list').appendChild(row);
+  row.querySelector('input').focus();
+}
+function addStepRow(){
+  const id=afStepCount++;
+  const row=document.createElement('div');
+  row.className='af-step-row';row.id='af-sr-'+id;
+  const num=document.getElementById('af-steps-list').children.length+1;
+  row.innerHTML=`<div class="af-step-num-el" id="af-sn-${id}">${num}</div>
+    <textarea class="af-step-ta" id="af-st-${id}" placeholder="Krok ${num}…" rows="2" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button class="af-del" onclick="document.getElementById('af-sr-${id}').remove();renum()">×</button>`;
+  document.getElementById('af-steps-list').appendChild(row);
+}
+function renum(){
+  Array.from(document.getElementById('af-steps-list').children).forEach((r,i)=>{
+    const n=r.querySelector('[id^="af-sn-"]');if(n)n.textContent=i+1;
+  });
+}
+function saveCustomMeal(){
+  const name=document.getElementById('af-name').value.trim();
+  if(!name){showToast('⚠️ Zadej název');document.getElementById('af-name').focus();return;}
+  const cat=document.getElementById('af-cat').value;
+  const ing=[];
+  document.getElementById('af-ing-list').querySelectorAll('.af-ing-row').forEach(row=>{
+    const n=row.querySelector('[id^="af-in-"]')?.value.trim();
+    const q=row.querySelector('[id^="af-iq-"]')?.value.trim();
+    const u=row.querySelector('[id^="af-iu-"]')?.value.trim();
+    if(n)ing.push({n,q:parseFloat(q)||0,u:u||'ks',sc:cat==='fi'?'Ryby':cat==='sn'?'Mléčné':'Drůbež'});
+  });
+  if(!ing.length){showToast('⚠️ Přidej alespoň 1 ingredienci');return;}
+  const steps=Array.from(document.getElementById('af-steps-list').querySelectorAll('textarea'))
+    .map(t=>t.value.trim()).filter(s=>s);
+  if(!steps.length){showToast('⚠️ Přidej alespoň 1 krok');return;}
+  const meal={id:'c_'+Date.now(),name,cat,time:document.getElementById('af-time').value.trim()||'—',prot:document.getElementById('af-prot').value.trim()||'—',ing,pantry:[],steps,isCustom:true};
+  CUSTOM_MEALS.push(meal);
+  saveLocal();schedulePush();
+  closeAddForm();resetAddForm();
+  renderMealList();
+  showToast('✓ Recept „'+name+'" přidán!');
+  setTimeout(()=>{const el=document.getElementById('mbody-'+meal.id);if(el)el.closest('.meal-card').scrollIntoView({behavior:'smooth',block:'center'});},200);
+}
+function deleteCustomMeal(id){
+  if(!confirm('Smazat tento recept?'))return;
+  CUSTOM_MEALS=CUSTOM_MEALS.filter(m=>m.id!==id);
+  saveLocal();schedulePush();
+  renderMealList();showToast('Recept smazán.');
+}
+
+// ─── GENERATE ────────────────────────────────────────────────────────────────
+function generate(){
+  const includeRed=document.getElementById('include-red').checked;
+  const btn=document.getElementById('btn-gen');
+  btn.innerHTML='<span class="spin"></span>Sestavuji…';btn.disabled=true;
+  setTimeout(()=>{
+    try{
+      const prevSunday=PLAN?PLAN.days[6].obed:null;
+      const snAll=shuffle(getAllMeals().filter(m=>m.cat==='sn'));
+      const mainAll=shuffle(getAllMeals().filter(m=>m.cat!=='sn'&&(m.cat!=='re'||includeRed)));
+      if(snAll.length<2||mainAll.length<3){showToast('⚠️ Databáze má málo jídel');return;}
+      const B=[snAll[0],snAll[1]];
+      const filtered=prevSunday?mainAll.filter(m=>m.name!==prevSunday):mainAll;
+      const L=filtered.slice(0,3);
+      const bPat=[0,0,0,0,1,1,1],lPat=[0,0,0,1,1,2,2];
+      let li=0;
+      const days=DAYS.map((day,i)=>({
+        day,
+        snidane:B[bPat[i]].name,
+        obed:L[lPat[i]].name,
+        vecere:(i===1||i===2||i===4)?L[lPat[i]].name+' (zbytky z oběda)':LIGHT_DINNERS[li++%LIGHT_DINNERS.length]
+      }));
+      const mealDays=[{meal:B[0],days:4},{meal:B[1],days:3},{meal:L[0],days:3},{meal:L[1],days:2},{meal:L[2],days:2}];
+      const shopping={};
+      for(const {meal,days:d} of mealDays){
+        for(const ing of meal.ing){
+          const sc=ing.sc;if(!shopping[sc])shopping[sc]={};
+          const k=ing.n.toLowerCase().trim();
+          if(!shopping[sc][k])shopping[sc][k]={name:ing.n,qty:0,unit:ing.u};
+          shopping[sc][k].qty+=ing.q*d;
+        }
+      }
+      const shoppingFinal={};
+      for(const cat of SHOP_ORDER){
+        if(!shopping[cat])continue;
+        shoppingFinal[cat]=Object.values(shopping[cat]).map(({name,qty,unit})=>`${name} – ${rq(qty,unit)} ${unit}`).sort((a,b)=>a.localeCompare(b,'cs'));
+      }
+      PLAN={days,shopping:shoppingFinal,pantry:[...new Set(mealDays.flatMap(md=>md.meal.pantry))],recipes:[...B,...L],generated:new Date().toLocaleDateString('cs-CZ'),sundayMeal:L[2].name};
+      CHECKED_ITEMS={};
+      saveLocal();schedulePush();
+      unlockPlanTabs();renderPlan();renderShop();goTo('plan');
+    }catch(e){showToast('Chyba: '+e.message);}
+    finally{btn.innerHTML='Vygenerovat jídelníček 🎲';btn.disabled=false;}
+  },60);
+}
+
+function unlockPlanTabs(){
+  document.getElementById('tab-plan').classList.remove('disabled');
+  document.getElementById('tab-shop').classList.remove('disabled');
+  document.getElementById('gen-prev').style.display='block';
+}
+
+// ─── PLAN ────────────────────────────────────────────────────────────────────
+// Map of swap context by key string
+const _swapMap={};
+
+function renderPlan(){
+  if(!PLAN)return;
+  Object.keys(_swapMap).forEach(k=>delete _swapMap[k]);
+  let key=0;
+  document.getElementById('plan-info-txt').textContent='Vygenerováno '+PLAN.generated+' · Klikni ⇄ pro výměnu jídla';
+  document.getElementById('plan-grid').innerHTML=PLAN.days.map((day,di)=>{
+    const cells=[
+      {slot:'snidane',label:'🌅 Snídaně',cls:'pmc-sn',val:day.snidane},
+      {slot:'obed',   label:'☀️ Oběd',   cls:'pmc-ob',val:day.obed},
+      {slot:'vecere', label:'🌙 Večeře', cls:'pmc-ve',val:day.vecere},
+    ];
+    return `<div class="plan-row"><div class="plan-row-head">
+      <div class="plan-day-cell">${esc(day.day)}</div>
+      ${cells.map(c=>{
+        const k='k'+(key++);
+        _swapMap[k]={dayIdx:di,slot:c.slot,currentName:c.val,dayName:day.day};
+        const changed=day['_ch_'+c.slot]?' pmc-changed':'';
+        return `<div class="plan-meal-cell ${c.cls}${changed}">
+          <div class="pmc-label">${c.label}</div>
+          <div class="pmc-text">${esc(c.val)}</div>
+          <button class="swap-btn" title="Vyměnit jídlo" data-key="${k}">⇄</button>
+        </div>`;
+      }).join('')}
+    </div></div>`;
+  }).join('');
+
+  // Event delegation for swap buttons – no inline JS with complex args
+  document.getElementById('plan-grid').addEventListener('click',function handler(e){
+    const btn=e.target.closest('.swap-btn');
+    if(!btn)return;
+    openSwap(btn.dataset.key);
+  },{once:false});
+  // Remove old listener by replacing element (cleaner: re-attach once)
+  // Actually simpler: use a single delegated listener on plan-grid, remove+re-add
+  // We already do addEventListener each renderPlan call – that stacks up.
+  // Fix: use a flag or cloneNode. Simplest: use onclick on the grid div.
+  // Instead let's just use a global onclick checker:
+
+  const pantryEl=document.getElementById('plan-pantry');
+  if(PLAN.pantry&&PLAN.pantry.length){
+    pantryEl.style.display='block';
+    document.getElementById('pantry-text').textContent=PLAN.pantry.join(' · ');
+  }else{pantryEl.style.display='none';}
+}
+
+// Fix: single global handler on plan-grid via onclick attribute approach
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('.swap-btn');
+  if(btn&&btn.dataset.key)openSwap(btn.dataset.key);
+});
+
+// ─── SWAP MODAL ──────────────────────────────────────────────────────────────
+function openSwap(key){
+  swapCtx=_swapMap[key];
+  if(!swapCtx)return;
+  const slotLbl={snidane:'Snídaně',obed:'Oběd',vecere:'Večeře'};
+  document.getElementById('swap-title').textContent='Vyměnit – '+swapCtx.dayName+' · '+(slotLbl[swapCtx.slot]||swapCtx.slot);
+  document.getElementById('swap-sub').textContent='Aktuálně: '+swapCtx.currentName;
+  document.getElementById('swap-search').value='';
+  swapFilt='all';
+  document.querySelectorAll('.swap-pill').forEach(p=>p.classList.remove('on'));
+  document.querySelector('.swap-pill').classList.add('on');
+  renderSwapList();
+  document.getElementById('swap-overlay').style.display='flex';
+  setTimeout(()=>document.getElementById('swap-search').focus(),100);
+}
+function closeSwap(){document.getElementById('swap-overlay').style.display='none';swapCtx=null;}
+
+function copyShareLink(){
+  if(!CFG.apiKey||!CFG.binId){
+    showToast('⚠️ Nejprve nastav cloud v záložce Nastavení');
+    return;
+  }
+  const base = window.location.origin + window.location.pathname;
+  const url = base + '?k=' + encodeURIComponent(CFG.apiKey) + '&b=' + encodeURIComponent(CFG.binId);
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast('✓ Odkaz zkopírován do schránky!',3000);
+    const box = document.getElementById('share-link-box');
+    if(box){ box.textContent = url; box.style.display='block'; }
+    const btn = document.getElementById('btn-share');
+    if(btn){ btn.textContent='✓ Zkopírováno!'; setTimeout(()=>btn.textContent='📋 Zkopírovat sdílený odkaz',3000); }
+  }).catch(()=>{
+    const box = document.getElementById('share-link-box');
+    if(box){ box.textContent = url; box.style.display='block'; }
+    showToast('Zkopíruj odkaz z pole níže',3000);
+  });
+}
+function overlayClick(e){if(e.target.id==='swap-overlay')closeSwap();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSwap();});
+
+function setSwapFilter(f,btn){
+  swapFilt=f;
+  document.querySelectorAll('.swap-pill').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  renderSwapList();
+}
+function renderSwapList(){
+  const q=(document.getElementById('swap-search').value||'').toLowerCase().trim();
+  const curName=swapCtx?swapCtx.currentName.replace(' (zbytky z oběda)',''):'';
+  const items=getAllMeals().filter(m=>(swapFilt==='all'||m.cat===swapFilt)&&(!q||m.name.toLowerCase().includes(q)));
+  const el=document.getElementById('swap-list');
+  if(!items.length){el.innerHTML='<div class="swap-empty">Žádné recepty neodpovídají hledání.</div>';return;}
+  el.innerHTML=items.map(m=>{
+    const cur=m.name===curName;
+    return `<div class="swap-item${cur?' is-current':''}" data-name="${esc(m.name)}">
+      <span class="tag ${CAT_TAG[m.cat]}" style="font-size:10px;padding:1px 7px;flex-shrink:0">${CAT_ICO[m.cat]}</span>
+      <div class="swap-item-name">${esc(m.name)}${cur?'<span class="swap-cur-badge">Aktuální</span>':''}</div>
+      <div class="swap-meta"><span class="swap-prot">💪 ${esc(m.prot)}</span><span class="swap-time">⏱ ${esc(m.time)}</span></div>
+    </div>`;
+  }).join('');
+}
+function swapListClick(e){
+  const item=e.target.closest('.swap-item');
+  if(!item||!swapCtx)return;
+  const name=item.dataset.name;
+  if(!name)return;
+  PLAN.days[swapCtx.dayIdx][swapCtx.slot]=name;
+  PLAN.days[swapCtx.dayIdx]['_ch_'+swapCtx.slot]=true;
+  saveLocal();schedulePush();
+  renderPlan();renderShop();
+  closeSwap();
+  showToast('✓ Vyměněno za „'+name+'"');
+}
+
+// ─── SHOP ────────────────────────────────────────────────────────────────────
+function renderShop(){
+  if(!PLAN)return;
+  const sh=PLAN.shopping||{};
+  const allLines=Object.values(sh).flat();
+  document.getElementById('all-ings-text').textContent=allLines.join('\n');
+  let cid=0;
+  document.getElementById('shop-grid').innerHTML=Object.entries(sh).map(([cat,items])=>{
+    const ico=SHOP_ICONS[cat]||'🛒';
+    return `<div class="shop-cat">
+      <div class="shop-cat-head"><div class="shop-cat-name"><span>${ico}</span>${esc(cat)}</div><span style="font-size:12px;color:var(--mt2)">${items.length} položek</span></div>
+      <div class="shop-items">${items.map(item=>{
+        const id='si-'+(cid++);
+        const done=CHECKED_ITEMS[id]?' done':'';
+        return `<div class="shop-item${done}" id="${id}" onclick="toggleShopItem('${id}')"><div class="shop-cb"></div><div class="shop-item-text">${esc(item)}</div></div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('recipe-list').innerHTML=(PLAN.recipes||[]).map((m,i)=>`
+    <div class="recipe-card">
+      <button class="recipe-hdr" onclick="toggleRecipe('rb-${i}','rc-${i}')">
+        <div class="recipe-hdr-left">
+          <div class="recipe-name">${esc(m.name)}</div>
+          <div class="recipe-meta"><span>⏱ ${esc(m.time)}</span><span class="recipe-prot">💪 ${esc(m.prot)}</span><span class="tag ${CAT_TAG[m.cat]}">${CAT_ICO[m.cat]} ${CAT_LBL[m.cat]}</span></div>
+        </div>
+        <span style="font-size:18px;color:var(--mt2);transition:transform .2s;display:inline-block" id="rc-${i}">▾</span>
+      </button>
+      <div class="r-body" id="rb-${i}">
+        <div class="r-body-title">Suroviny</div>
+        <div class="r-ing-list">${m.ing.map(ing=>`${ing.n} – ${ing.q} ${ing.u}`).join('\n')}</div>
+        ${m.pantry&&m.pantry.length?`<div class="r-pantry-txt">🏠 Doma: ${esc(m.pantry.join(', '))}</div>`:''}
+        <div class="r-body-title" style="margin-top:14px">Postup</div>
+        <div class="r-steps">${m.steps.map((s,si)=>`<div class="r-step"><span class="r-step-num">${si+1}</span><span class="r-step-text">${esc(s)}</span></div>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleRecipe(bodyId,chevId){
+  const b=document.getElementById(bodyId),c=document.getElementById(chevId);
+  if(!b)return;
+  b.classList.toggle('open');
+  c.style.transform=b.classList.contains('open')?'rotate(180deg)':'';
+}
+function toggleShopItem(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.classList.toggle('done');
+  CHECKED_ITEMS[id]=el.classList.contains('done');
+  saveLocal();schedulePush();
+}
+function copyAll(){
+  const text=document.getElementById('all-ings-text').textContent;
+  const btn=document.getElementById('copy-btn');
+  const box=document.getElementById('all-ings-box');
+  navigator.clipboard.writeText(text).then(()=>{
+    box.style.display='block';
+    btn.textContent='✓ Zkopírováno!';btn.classList.add('copied');
+    showToast('📋 Zkopírováno do schránky!');
+    setTimeout(()=>{btn.textContent='📋 Kopírovat vše';btn.classList.remove('copied');},3000);
+  }).catch(()=>{box.style.display='block';showToast('Zkopíruj text ze zeleného pole');});
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init(){
+  // Načti konfiguraci z URL parametrů (sdílený odkaz)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlKey = urlParams.get('k');
+  const urlBin = urlParams.get('b');
+  if(urlKey && urlBin){
+    CFG = {apiKey: decodeURIComponent(urlKey), binId: decodeURIComponent(urlBin)};
+    try{localStorage.setItem('fp_cfg', JSON.stringify(CFG));}catch(e){}
+    // Vyčisti URL bez reloadu
+    window.history.replaceState({},'',window.location.pathname);
+  }
+  loadLocal();
+  renderMealList();
+  updateSyncUI();
+  // Zobraz lokálně uložená data okamžitě
+  if(PLAN){unlockPlanTabs();renderPlan();renderShop();}
+  // Vždy stáhni nejnovější data z cloudu (pokud je konfigurace k dispozici)
+  if(CFG.apiKey&&CFG.binId){
+    showToast('☁️ Načítám sdílená data…',1800);
+    doPull(true).then(ok=>{
+      if(ok&&PLAN){unlockPlanTabs();renderPlan();renderShop();renderMealList();}
+      updateSyncUI();
+    });
+  } else if(DEFAULT_CFG.apiKey&&DEFAULT_CFG.binId) {
+    // DEFAULT_CFG je vyplněn ale localStorage byl prázdný – už jsme ho přiřadili v loadLocal
+    showToast('☁️ Načítám sdílená data…',1800);
+    doPull(true).then(ok=>{
+      if(ok&&PLAN){unlockPlanTabs();renderPlan();renderShop();renderMealList();}
+      updateSyncUI();
+    });
+  }
+  // Zobraz banner pokud cloud není nastaven
+  const nb = document.getElementById('no-cloud-banner');
+  if(nb) nb.style.display = (!CFG.apiKey || !CFG.binId) ? 'block' : 'none';
+}
+init();
+</script>
+</body>
+</html>
