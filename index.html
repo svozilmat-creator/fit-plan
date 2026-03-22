@@ -872,6 +872,11 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--tx);min-heigh
         <button class="btn-ss" onclick="doPush()">⬆️ Nahrát</button>
         <button class="btn-ss" onclick="doPull()">⬇️ Stáhnout</button>
       </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:6px">🔄 Obnovit skrytá jídla</div>
+        <div style="font-size:13px;color:var(--mt);margin-bottom:8px">Zobrazí zpět všechna jídla, která jsi skryl z databáze.</div>
+        <button class="btn-ss" onclick="restoreHidden()">♻️ Obnovit vše skryté (<span id="hidden-count">0</span> jídel)</button>
+      </div>
       <div style="margin-top:16px;padding-top:16px;border-top:1.5px solid var(--bd)">
         <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:8px">🔗 Sdílený odkaz</div>
         <div style="font-size:13px;color:var(--mt);margin-bottom:10px;line-height:1.6">Zkopíruj tento odkaz a pošli komukoliv – kdo ho otevře, automaticky se připojí ke sdíleným datům.</div>
@@ -1380,6 +1385,7 @@ const LIGHT_DINNERS = [
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let CUSTOM_MEALS = [];
+let HIDDEN_IDS = []; // vestavěná jídla skrytá uživatelem
 let CHECKED_ITEMS = {};
 let PLAN = null;
 // ╔══════════════════════════════════════════════════════════════════════════╗
@@ -1406,10 +1412,10 @@ function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.fl
 function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
 function rq(q,u){if(u==='g'||u==='ml'){if(q<100)return Math.round(q/10)*10||10;if(q<500)return Math.round(q/50)*50;return Math.round(q/100)*100;}return q%1===0?q:parseFloat(q.toFixed(1));}
 function getAllMeals(){
-  // Custom meals with overridesBuiltin replace DB meals of same ID
   const overrideIds=new Set(CUSTOM_MEALS.filter(m=>m.overridesBuiltin).map(m=>m.id));
-  const base=DB.filter(m=>!overrideIds.has(m.id));
-  return [...base,...CUSTOM_MEALS];
+  const hiddenSet=new Set(HIDDEN_IDS);
+  const base=DB.filter(m=>!overrideIds.has(m.id)&&!hiddenSet.has(m.id));
+  return [...base,...CUSTOM_MEALS.filter(m=>!hiddenSet.has(m.id))];
 }
 
 function showToast(msg,ms=2500){
@@ -1424,6 +1430,7 @@ function saveLocal(){
   try{localStorage.setItem('fp_custom',JSON.stringify(CUSTOM_MEALS));}catch(e){}
   try{localStorage.setItem('fp_checked',JSON.stringify(CHECKED_ITEMS));}catch(e){}
   try{localStorage.setItem('fp_cfg',JSON.stringify(CFG));}catch(e){}
+  try{localStorage.setItem('fp_hidden',JSON.stringify(HIDDEN_IDS));}catch(e){}
 }
 function loadLocal(){
   try{const v=localStorage.getItem('fp_plan');if(v){const p=JSON.parse(v);if(p&&Array.isArray(p.days)&&p.days.length===5)PLAN=p;else{localStorage.removeItem('fp_plan');PLAN=null;}}}catch(e){}
@@ -1431,7 +1438,7 @@ function loadLocal(){
   try{const v=localStorage.getItem('fp_checked');if(v)CHECKED_ITEMS=JSON.parse(v);}catch(e){}
   // Načti uložená nastavení z localStorage
   try{const v=localStorage.getItem('fp_cfg');if(v)CFG={...CFG,...JSON.parse(v)};}catch(e){}
-  // Pokud uživatel nemá vlastní nastavení, použij výchozí sdílenou konfiguraci
+  try{const v=localStorage.getItem('fp_hidden');if(v)HIDDEN_IDS=JSON.parse(v);}catch(e){}
   if(!CFG.apiKey && DEFAULT_CFG.apiKey) CFG = {...DEFAULT_CFG};
 }
 
@@ -1450,7 +1457,7 @@ async function doPush(silent){
     const res=await fetch(JB+'/b/'+CFG.binId,{
       method:'PUT',
       headers:{'Content-Type':'application/json','X-Master-Key':CFG.apiKey},
-      body:JSON.stringify({v:1,plan:PLAN,custom:CUSTOM_MEALS,checked:CHECKED_ITEMS,ts:new Date().toISOString()})
+      body:JSON.stringify({v:1,plan:PLAN,custom:CUSTOM_MEALS,checked:CHECKED_ITEMS,hidden:HIDDEN_IDS,ts:new Date().toISOString()})
     });
     if(!res.ok)throw new Error('HTTP '+res.status);
     lastSync=new Date();
@@ -1477,6 +1484,7 @@ async function doPull(silent){
     }
     if(Array.isArray(r.custom))CUSTOM_MEALS=r.custom;
     if(r.checked)CHECKED_ITEMS=r.checked;
+    if(Array.isArray(r.hidden))HIDDEN_IDS=r.hidden;
     saveLocal();
     lastSync=new Date();
     updateSyncUI();
@@ -1570,7 +1578,7 @@ function goTo(id){
   const tabs=['db','gen','plan','shop','settings'];
   const idx=tabs.indexOf(id);
   if(idx>=0)document.querySelectorAll('.nav-btn')[idx].classList.add('active');
-  if(id==='settings')updateSyncUI();
+  if(id==='settings'){updateSyncUI();updateHiddenCount();}
 }
 
 // ─── DB PAGE ─────────────────────────────────────────────────────────────────
@@ -1601,7 +1609,7 @@ function renderMealList(){
         <div class="steps-list">${m.steps.map((s,i)=>`<div class="step-item"><span class="step-num">${i+1}</span><span class="step-text">${esc(s)}</span></div>`).join('')}</div>
         <div class="meal-actions">
           <button class="meal-action-btn" onclick="openEditModal('${m.id}')">✏️ Upravit</button>
-          ${m.isCustom?`<button class="meal-action-btn danger" onclick="deleteCustomMeal('${m.id}')">🗑 Smazat</button>`:''}
+          <button class="meal-action-btn danger" onclick="deleteMeal('${m.id}')">🗑 Smazat</button>
         </div>
       </div>
     </div>`).join('');
@@ -1736,11 +1744,23 @@ function saveCustomMeal(){
   setTimeout(()=>{const el=document.getElementById('mbody-'+meal.id);if(el)el.closest('.meal-card').scrollIntoView({behavior:'smooth',block:'center'});},200);
 }
 
-function deleteCustomMeal(id){
-  if(!confirm('Smazat tento recept?'))return;
-  CUSTOM_MEALS=CUSTOM_MEALS.filter(m=>m.id!==id);
+function deleteCustomMeal(id){ deleteMeal(id); } // backwards compat
+
+function deleteMeal(id){
+  const meal=getAllMeals().find(m=>m.id===id);
+  const name=meal?meal.name:'jídlo';
+  if(!confirm('Smazat „'+name+'"?\n\nVestavěná jídla lze obnovit v záložce Nastavení.'))return;
+  const isCustom=CUSTOM_MEALS.some(m=>m.id===id);
+  if(isCustom){
+    CUSTOM_MEALS=CUSTOM_MEALS.filter(m=>m.id!==id);
+  } else {
+    // Vestavěné jídlo – uložit do hidden listu
+    if(!HIDDEN_IDS.includes(id)) HIDDEN_IDS.push(id);
+    try{localStorage.setItem('fp_hidden',JSON.stringify(HIDDEN_IDS));}catch(e){}
+  }
   saveLocal();schedulePush();
-  renderMealList();showToast('Recept smazán.');
+  renderMealList();
+  showToast('✓ „'+name+'" smazáno.');
 }
 
 // ─── SMART LOCAL PARSER ──────────────────────────────────────────────────────
@@ -1931,6 +1951,20 @@ function openEditModal(id){
   document.getElementById('edit-overlay').style.display='flex';
 }
 
+function restoreHidden(){
+  if(!HIDDEN_IDS.length){showToast('Žádná jídla nejsou skrytá.');return;}
+  if(!confirm('Obnovit všechna skrytá jídla ('+HIDDEN_IDS.length+')?'))return;
+  HIDDEN_IDS=[];
+  try{localStorage.removeItem('fp_hidden');}catch(e){}
+  schedulePush();
+  renderMealList();
+  updateHiddenCount();
+  showToast('✓ Všechna jídla obnovena.');
+}
+function updateHiddenCount(){
+  const el=document.getElementById('hidden-count');
+  if(el)el.textContent=HIDDEN_IDS.length;
+}
 function closeEditModal(){
   document.getElementById('edit-overlay').style.display='none';
   editingMealId=null;
@@ -2249,6 +2283,7 @@ function init(){
   // Zobraz lokálně uložená data okamžitě
   if(PLAN){unlockPlanTabs();renderPlan();renderShop();}
   // Vždy stáhni nejnovější data z cloudu (pokud je konfigurace k dispozici)
+  updateHiddenCount();
   if(CFG.apiKey&&CFG.binId){
     showToast('☁️ Načítám sdílená data…',1800);
     doPull(true).then(ok=>{
