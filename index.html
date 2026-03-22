@@ -93,13 +93,19 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--tx);min-heigh
 
 /* ── MEAL CARDS ── */
 .meal-list{display:flex;flex-direction:column;gap:8px;}
+.meal-row{display:flex;align-items:stretch;}
+.meal-btns{display:flex;flex-shrink:0;border-left:1px solid var(--bd);}
+.meal-btn-edit,.meal-btn-del{width:44px;min-height:48px;border:none;background:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;padding:0;}
+.meal-btn-edit:hover{background:var(--g2);}
+.meal-btn-del{border-left:1px solid var(--bd);}
+.meal-btn-del:hover{background:var(--rel);}
 .meal-card{
   background:var(--card);border:1px solid var(--bd);border-radius:var(--r);
   overflow:hidden;transition:box-shadow .2s,border-color .2s;
 }
 .meal-card:hover{box-shadow:var(--sh);border-color:var(--bd2);}
 .meal-header{
-  width:100%;display:flex;align-items:center;gap:10px;
+  flex:1;min-width:0;display:flex;align-items:center;gap:10px;
   padding:13px 18px;border:none;background:none;
   text-align:left;cursor:pointer;font-family:var(--font-body);
 }
@@ -598,11 +604,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--tx);min-heigh
 .edit-modal-footer{padding:16px 22px;border-top:1px solid var(--bd);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;}
 
 /* ── MEAL CARD ACTIONS ── */
-.meal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--bd);}
-.meal-action-btn{padding:7px 16px;border-radius:9px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid var(--bd);background:none;color:var(--mt);}
-.meal-action-btn:hover{border-color:var(--g);color:var(--g);background:var(--g2);}
-.meal-action-btn.danger{border-color:transparent;}
-.meal-action-btn.danger:hover{border-color:var(--re);color:var(--re);background:var(--rel);}
+/* meal-actions removed, replaced by meal-btns */
 
 /* ── AI LOADING STATE ── */
 .af-ai-loading{display:none;align-items:center;gap:12px;padding:16px;background:var(--g2);border-radius:12px;margin-top:12px;font-size:14px;color:var(--g3);font-weight:600;}
@@ -1594,23 +1596,25 @@ function renderMealList(){
   const filt=all.filter(m=>dbFilter==='all'?true:m.cat===dbFilter);
   document.getElementById('meal-list').innerHTML=filt.map(m=>`
     <div class="meal-card">
-      <button class="meal-header" onclick="toggleMeal('mbody-${m.id}','mchev-${m.id}')">
-        <span class="meal-name">${esc(m.name)}${m.isCustom?'<span class="custom-badge">Vlastní</span>':''}</span>
-        <span class="tag ${CAT_TAG[m.cat]}" style="flex-shrink:0">${CAT_ICO[m.cat]} ${CAT_LBL[m.cat]}</span>
-        <span class="prot-badge">💪 ${esc(m.prot)}</span>
-        <span class="meal-time-txt">⏱ ${esc(m.time)}</span>
-        <span class="meal-chev" id="mchev-${m.id}">▾</span>
-      </button>
+      <div class="meal-row">
+        <button class="meal-header" onclick="toggleMeal('mbody-${m.id}','mchev-${m.id}')">
+          <span class="meal-name">${esc(m.name)}${m.isCustom?'<span class="custom-badge">Vlastní</span>':''}</span>
+          <span class="tag ${CAT_TAG[m.cat]}" style="flex-shrink:0">${CAT_ICO[m.cat]} ${CAT_LBL[m.cat]}</span>
+          <span class="prot-badge">💪 ${esc(m.prot)}</span>
+          <span class="meal-time-txt">⏱ ${esc(m.time)}</span>
+          <span class="meal-chev" id="mchev-${m.id}">▾</span>
+        </button>
+        <div class="meal-btns">
+          <button class="meal-btn-edit" onclick="openEditModal('${m.id}')" title="Upravit">✏️</button>
+          <button class="meal-btn-del" onclick="deleteMeal('${m.id}')" title="${m.isCustom?'Smazat':'Skrýt'}">🗑</button>
+        </div>
+      </div>
       <div class="meal-body" id="mbody-${m.id}">
         <div class="meal-body-title">Suroviny (pro 2 os. / 1 vaření)</div>
         <div class="ing-list">${m.ing.map(i=>`${i.n} – ${i.q} ${i.u}`).join('\n')}</div>
         ${m.pantry&&m.pantry.length?`<div class="pantry-txt">🏠 Předpokládáme doma: ${esc(m.pantry.join(', '))}</div>`:''}
         <div class="meal-body-title" style="margin-top:14px">Postup krok za krokem</div>
         <div class="steps-list">${m.steps.map((s,i)=>`<div class="step-item"><span class="step-num">${i+1}</span><span class="step-text">${esc(s)}</span></div>`).join('')}</div>
-        <div class="meal-actions">
-          <button class="meal-action-btn" onclick="openEditModal('${m.id}')">✏️ Upravit</button>
-          <button class="meal-action-btn danger" onclick="deleteMeal('${m.id}')">🗑 Smazat</button>
-        </div>
       </div>
     </div>`).join('');
   const total=all.length,cust=CUSTOM_MEALS.length;
@@ -2204,9 +2208,74 @@ function swapListClick(e){
 }
 
 // ─── SHOP ────────────────────────────────────────────────────────────────────
+// ─── PŘEPOČÍTÁNÍ NÁKUPU Z AKTUÁLNÍHO PLÁNU ──────────────────────────────────
+function computeShopFromPlan(){
+  // Zjisti unikátní jídla z aktuálního jídelníčku (každé jídlo počítáme jen jednou)
+  if(!PLAN||!PLAN.days) return {shopping:{},recipes:[],pantry:[]};
+  const allMeals=getAllMeals();
+  const mealByName={};
+  allMeals.forEach(m=>{ mealByName[m.name.toLowerCase().trim()]=m; });
+
+  // Spočítej kolikrát se každé jídlo vaří (ne zbytky)
+  const mealCount={};
+  PLAN.days.forEach(day=>{
+    ['snidane','obed','vecere'].forEach(slot=>{
+      const raw=day[slot]||'';
+      const name=raw.replace(' (zbytky z oběda)','').trim();
+      if(!mealCount[name]) mealCount[name]=0;
+      // Zbytky = nepočítáme znovu
+      if(!raw.includes('(zbytky')) mealCount[name]++;
+    });
+  });
+
+  const shopping={};
+  const recipes=[];
+  const pantryAll=new Set();
+
+  Object.entries(mealCount).forEach(([name,days])=>{
+    if(!days) return;
+    const meal=mealByName[name.toLowerCase().trim()];
+    if(!meal||!meal.ing) return;
+    recipes.push(meal);
+    (meal.pantry||[]).forEach(p=>pantryAll.add(p));
+    meal.ing.forEach(ing=>{
+      const sc=ing.sc||'Ostatní';
+      if(!shopping[sc]) shopping[sc]={};
+      const k=ing.n.toLowerCase().trim();
+      if(!shopping[sc][k]) shopping[sc][k]={name:ing.n,qty:0,unit:ing.u};
+      shopping[sc][k].qty+=ing.q*days;
+    });
+  });
+
+  // Formátuj
+  const shoppingFinal={};
+  for(const cat of SHOP_ORDER){
+    if(!shopping[cat]) continue;
+    shoppingFinal[cat]=Object.values(shopping[cat])
+      .map(({name,qty,unit})=>`${name} – ${rq(qty,unit)} ${unit}`)
+      .sort((a,b)=>a.localeCompare(b,'cs'));
+  }
+  // Ostatní kategorie které nejsou v SHOP_ORDER
+  Object.keys(shopping).filter(k=>!SHOP_ORDER.includes(k)).forEach(cat=>{
+    shoppingFinal[cat]=Object.values(shopping[cat])
+      .map(({name,qty,unit})=>`${name} – ${rq(qty,unit)} ${unit}`)
+      .sort((a,b)=>a.localeCompare(b,'cs'));
+  });
+
+  return {shopping:shoppingFinal, recipes:[...new Set(recipes)], pantry:[...pantryAll]};
+}
+
 function renderShop(){
   if(!PLAN)return;
-  const sh=PLAN.shopping||{};
+
+  // Vždy přepočítej z aktuálního stavu plánu
+  const {shopping:sh, recipes, pantry} = computeShopFromPlan();
+
+  // Aktualizuj i PLAN pro případné uložení
+  PLAN.shopping=sh;
+  PLAN.recipes=recipes;
+  PLAN.pantry=[...pantry];
+
   const allLines=Object.values(sh).flat();
   document.getElementById('all-ings-text').textContent=allLines.join('\n');
   let cid=0;
@@ -2222,7 +2291,14 @@ function renderShop(){
     </div>`;
   }).join('');
 
-  document.getElementById('recipe-list').innerHTML=(PLAN.recipes||[]).map((m,i)=>`
+  // Recepty – unikátní jídla z plánu
+  const uniqueRecipes=[];
+  const seen=new Set();
+  recipes.forEach(m=>{ if(!seen.has(m.id)){seen.add(m.id);uniqueRecipes.push(m);} });
+
+  document.getElementById('recipe-list').innerHTML=uniqueRecipes.length===0
+    ? '<p style="color:var(--mt);font-size:14px;padding:1rem 0">Žádné recepty – vygeneruj jídelníček.</p>'
+    : uniqueRecipes.map((m,i)=>`
     <div class="recipe-card">
       <button class="recipe-hdr" onclick="toggleRecipe('rb-${i}','rc-${i}')">
         <div class="recipe-hdr-left">
@@ -2232,13 +2308,23 @@ function renderShop(){
         <span style="font-size:18px;color:var(--mt2);transition:transform .2s;display:inline-block" id="rc-${i}">▾</span>
       </button>
       <div class="r-body" id="rb-${i}">
-        <div class="r-body-title">Suroviny</div>
+        <div class="r-body-title">Suroviny (pro 2 os. / 1 vaření)</div>
         <div class="r-ing-list">${m.ing.map(ing=>`${ing.n} – ${ing.q} ${ing.u}`).join('\n')}</div>
         ${m.pantry&&m.pantry.length?`<div class="r-pantry-txt">🏠 Doma: ${esc(m.pantry.join(', '))}</div>`:''}
-        <div class="r-body-title" style="margin-top:14px">Postup</div>
+        <div class="r-body-title" style="margin-top:14px">Postup krok za krokem</div>
         <div class="r-steps">${m.steps.map((s,si)=>`<div class="r-step"><span class="r-step-num">${si+1}</span><span class="r-step-text">${esc(s)}</span></div>`).join('')}</div>
       </div>
     </div>`).join('');
+
+  // Pantry banner v plánu
+  const pantryEl=document.getElementById('plan-pantry');
+  if(pantryEl){
+    if(pantry.size>0||PLAN.pantry?.length>0){
+      pantryEl.style.display='block';
+      const pt=document.getElementById('pantry-text');
+      if(pt) pt.textContent=[...pantry].join(' · ');
+    }
+  }
 }
 
 function toggleRecipe(bodyId,chevId){
