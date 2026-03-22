@@ -1426,7 +1426,7 @@ function saveLocal(){
   try{localStorage.setItem('fp_cfg',JSON.stringify(CFG));}catch(e){}
 }
 function loadLocal(){
-  try{const v=localStorage.getItem('fp_plan');if(v)PLAN=JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('fp_plan');if(v){const p=JSON.parse(v);if(p&&Array.isArray(p.days)&&p.days.length===5)PLAN=p;else{localStorage.removeItem('fp_plan');PLAN=null;}}}catch(e){}
   try{const v=localStorage.getItem('fp_custom');if(v)CUSTOM_MEALS=JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('fp_checked');if(v)CHECKED_ITEMS=JSON.parse(v);}catch(e){}
   // Načti uložená nastavení z localStorage
@@ -1470,7 +1470,11 @@ async function doPull(silent){
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
     const r=data.record||{};
-    if(r.plan)PLAN=r.plan;
+    if(r.plan){
+      // Validace cloudového plánu – musí mít 5 dní
+      if(Array.isArray(r.plan.days)&&r.plan.days.length===5)PLAN=r.plan;
+      else PLAN=null; // starý 7denní plán z cloudu – ignorovat
+    }
     if(Array.isArray(r.custom))CUSTOM_MEALS=r.custom;
     if(r.checked)CHECKED_ITEMS=r.checked;
     saveLocal();
